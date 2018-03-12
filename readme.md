@@ -460,7 +460,7 @@ php $WEBROOT/bin/magento setup:config:set --session-save=redis --session-save-re
 #n98-magerun2 config:set catalog/frontend/grid_per_page "12"
 n98-magerun2 config:set catalog/frontend/flat_catalog_category 1
 n98-magerun2 config:set catalog/frontend/flat_catalog_product 1
-n98-magerun2 config:set system/full_page_cache/caching_application 2
+n98-magerun2 config:set system/full_page_cache/caching_application 1
 n98-magerun2 config:set system/full_page_cache/ttl 86400
 n98-magerun2 config:set dev/grid/async_indexing 1
 n98-magerun2 config:set sales_email/general/async_sending 1
