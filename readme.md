@@ -5,6 +5,7 @@
 * [Introduction](https://github.com/centminmod/centminmod-magento2#introduction)
 * [Centmin Mod 123.09beta01 LEMP Stack Install](https://github.com/centminmod/centminmod-magento2#centmin-mod-12309beta01-lemp-stack-install)
 * [Magento 2.2.2 Installation](https://github.com/centminmod/centminmod-magento2#magento-222-installation)
+* Magento 2 Page Speed Tests
 * [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
 
 ## Introduction
@@ -1225,6 +1226,21 @@ echo "SELECT engine, count(*) tables, concat(round(sum(table_rows))) rows, conca
 ![](/screenshots/magento-222-admin-05.png)
 
 ![](/screenshots/magento-222-admin-06.png)
+
+## Magento 2 Page Speed Tests
+
+Quick [WebPageTest.org test](https://www.webpagetest.org). Check out my guide on [How to use webpagetest.org for page load speed testing](https://community.centminmod.com/threads/how-to-use-webpagetest-org-for-page-load-speed-testing.13859/).
+
+Default Magento theme has up to 168 HTTP requests of which 144 are Javascript assets !
+
+![](/screenshots/wpt-magento-222-centminmod-nginx-default-theme-cable-dulles-01.png)
+
+![](/screenshots/wpt-magento-222-centminmod-nginx-default-theme-cable-dulles-02.png)
+
+![](/screenshots/wpt-magento-222-centminmod-nginx-default-theme-cable-dulles-03.png)
+
+![](/screenshots/wpt-magento-222-centminmod-nginx-default-theme-cable-dulles-04.png)
+
 
 ## Magento Docs & Info Links
 
