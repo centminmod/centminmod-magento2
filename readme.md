@@ -17,7 +17,7 @@ I have never used Magento before so this is first attempt at installing Magento 
 
 All below installation steps assume you have thoroughly read those listed [official Magento 2.2.2 documentation and links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links). So if you do not understand any of the SSH commands used, start reading the listed documentation and links below.
 
-** Github Repository **
+**Github Repository**
 
 * https://github.com/centminmod/centminmod-magento2
 
