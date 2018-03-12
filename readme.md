@@ -152,6 +152,70 @@ php --ri "Zend Opcache"
 php --ri session
 ```
 
+check Zend Opcache settings
+
+```
+php --ri "Zend Opcache"
+
+Zend OPcache
+
+Opcode Caching => Up and Running
+Optimization => Enabled
+SHM Cache => Enabled
+File Cache => Disabled
+Startup => OK
+Shared memory model => mmap
+Cache hits => 0
+Cache misses => 0
+Used memory => 21488896
+Free memory => 515382016
+Wasted memory => 0
+Interned Strings Used memory => 413712
+Interned Strings Free memory => 7974896
+Cached scripts => 0
+Cached keys => 0
+Max keys => 65407
+OOM restarts => 0
+Hash keys restarts => 0
+Manual restarts => 0
+
+Directive => Local Value => Master Value
+opcache.enable => On => On
+opcache.use_cwd => On => On
+opcache.validate_timestamps => On => On
+opcache.validate_permission => Off => Off
+opcache.validate_root => Off => Off
+opcache.inherited_hack => On => On
+opcache.dups_fix => Off => Off
+opcache.revalidate_path => Off => Off
+opcache.log_verbosity_level => 1 => 1
+opcache.memory_consumption => 512 => 512
+opcache.interned_strings_buffer => 8 => 8
+opcache.max_accelerated_files => 65407 => 65407
+opcache.max_wasted_percentage => 5 => 5
+opcache.consistency_checks => 0 => 0
+opcache.force_restart_timeout => 180 => 180
+opcache.revalidate_freq => 180 => 180
+opcache.file_update_protection => 2 => 2
+opcache.preferred_memory_model => no value => no value
+opcache.blacklist_filename => no value => no value
+opcache.max_file_size => 0 => 0
+opcache.protect_memory => 0 => 0
+opcache.save_comments => 1 => 1
+opcache.fast_shutdown => 0 => 0
+opcache.optimization_level => 0x7FFFBFFF => 0x7FFFBFFF
+opcache.opt_debug_level => 0 => 0
+opcache.enable_file_override => On => On
+opcache.enable_cli => On => On
+opcache.error_log => no value => no value
+opcache.restrict_api => no value => no value
+opcache.lockfile_path => /tmp => /tmp
+opcache.file_cache => no value => no value
+opcache.file_cache_only => 0 => 0
+opcache.file_cache_consistency_checks => 1 => 1
+opcache.huge_code_pages => Off => Off
+```
+
 ### Step 3. Download & Install Magento
 
 Below steps will download Magento 2.2.2 via Composer and use Magento native `bin/magento` binary to install Magento 2.2.2 on Centmin Mod LEMP stack based CentOS 7.4 64bit server enabling the following optimisations:
