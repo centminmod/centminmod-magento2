@@ -1036,6 +1036,34 @@ n98-magerun2 sys:info --skip-root-check
 +------------------+-----------------------------------------------+
 ```
 
+cache list
+
+```
+n98-magerun2 cache:list --skip-root-check
+
+                       
+  Magento Cache Types  
+                       
+
++------------------------+--------------------------------+---------+
+| Name                   | Type                           | Enabled |
++------------------------+--------------------------------+---------+
+| config                 | Configuration                  | 1       |
+| layout                 | Layouts                        | 1       |
+| block_html             | Blocks HTML output             | 1       |
+| collections            | Collections Data               | 1       |
+| reflection             | Reflection Data                | 1       |
+| db_ddl                 | Database DDL operations        | 1       |
+| eav                    | EAV types and attributes       | 1       |
+| customer_notification  | Customer Notification          | 1       |
+| config_integration     | Integrations Configuration     | 1       |
+| config_integration_api | Integrations API Configuration | 1       |
+| full_page              | Page Cache                     | 1       |
+| translate              | Translations                   | 1       |
+| config_webservice      | Web Services Configuration     | 1       |
++------------------------+--------------------------------+---------+
+```
+
 system check
 
 ```
