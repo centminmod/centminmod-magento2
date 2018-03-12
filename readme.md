@@ -143,13 +143,21 @@ php --ri lzf
 * tune and edit custom php.ini settings via custom separate individual .ini settings files outlined at https://centminmod.com/phpfpm.html
 * create custom .ini settings file at /etc/centminmod/php.d/zzz-zendopcache.ini which overrides default /etc/centminmod/php.d/zendopcache.ini
 * allocate 512MB of memory to Zend Opcache but don't set opcache.validate_timestamps=0 and leave at default opcache.validate_timestamps=1
+* set memory_limit to 1024MB
 
 ```
-echo -e "opcache.memory_consumption=512\nopcache.enable_cli=1\nsession.gc_maxlifetime=86400" > /etc/centminmod/php.d/zzz-zendopcache.ini
+echo -e "memory_limit=1024M\nopcache.memory_consumption=512\nopcache.enable_cli=1\nsession.gc_maxlifetime=86400" > /etc/centminmod/php.d/zzz-zendopcache.ini
 fpmrestart
 php --ini
 php --ri "Zend Opcache"
 php --ri session
+```
+
+check memory_limit
+
+```
+php -i | grep memory_limit
+memory_limit => 1024M => 1024M
 ```
 
 check Zend Opcache settings
@@ -486,6 +494,9 @@ echo "022" > $WEBROOT/magento_umask
 # optimisations for production mode only
 php $WEBROOT/bin/magento deploy:mode:show
 php $WEBROOT/bin/magento deploy:mode:set production
+# optimisations
+n98-magerun2 config:set dev/js/merge_files 1
+n98-magerun2 config:set dev/css/merge_css_files 1
 php $WEBROOT/bin/magento setup:static-content:deploy
 php $WEBROOT/bin/magento setup:di:compile
 
@@ -515,7 +526,6 @@ php $WEBROOT/bin/magento setup:upgrade
 
 # optimisations
 n98-magerun2 config:set dev/js/merge_files 0
-n98-magerun2 config:set dev/css/merge_files 0
 n98-magerun2 config:set dev/css/merge_css_files 0
 php $WEBROOT/bin/magento setup:static-content:deploy
 php $WEBROOT/bin/magento setup:di:compile
