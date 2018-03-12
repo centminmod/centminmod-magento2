@@ -1215,6 +1215,134 @@ echo "SELECT engine, count(*) tables, concat(round(sum(table_rows))) rows, conca
 +--------+--------+------+--------+---------+------------+---------+
 ```
 
+default Magento modules' status
+
+```
+php $WEBROOT/bin/magento module:status
+List of enabled modules:
+Magento_Store
+Magento_Directory
+Magento_AdvancedPricingImportExport
+Magento_Config
+Magento_Backend
+Magento_Theme
+Magento_Eav
+Magento_Backup
+Magento_Customer
+Magento_AdminNotification
+Magento_BundleImportExport
+Magento_CacheInvalidate
+Magento_Indexer
+Magento_Cms
+Magento_Security
+Magento_CatalogImportExport
+Magento_Rule
+Magento_Cron
+Magento_Catalog
+Magento_Search
+Magento_CatalogUrlRewrite
+Magento_Widget
+Magento_Quote
+Magento_SalesSequence
+Magento_Payment
+Magento_CmsUrlRewrite
+Magento_User
+Magento_ConfigurableImportExport
+Magento_Msrp
+Magento_CatalogInventory
+Magento_Contact
+Magento_Cookie
+Magento_Newsletter
+Magento_CurrencySymbol
+Magento_Sales
+Magento_Integration
+Magento_CustomerImportExport
+Magento_Deploy
+Magento_Developer
+Magento_Dhl
+Magento_Authorization
+Magento_Downloadable
+Magento_ImportExport
+Magento_Bundle
+Magento_Email
+Magento_EncryptionKey
+Magento_Fedex
+Magento_GiftMessage
+Magento_Checkout
+Magento_GoogleAnalytics
+Magento_Ui
+Magento_GroupedImportExport
+Magento_GroupedProduct
+Magento_DownloadableImportExport
+Magento_CatalogRule
+Magento_InstantPurchase
+Magento_Analytics
+Magento_LayeredNavigation
+Magento_Marketplace
+Magento_MediaStorage
+Magento_ConfigurableProduct
+Magento_Multishipping
+Magento_NewRelicReporting
+Magento_Reports
+Magento_OfflinePayments
+Magento_SalesRule
+Magento_PageCache
+Magento_Vault
+Magento_Paypal
+Magento_Persistent
+Magento_ProductAlert
+Magento_ProductVideo
+Magento_CheckoutAgreements
+Magento_QuoteAnalytics
+Magento_ReleaseNotification
+Magento_Review
+Magento_RequireJs
+Magento_Shipping
+Magento_ReviewAnalytics
+Magento_Robots
+Magento_Rss
+Magento_CatalogRuleConfigurable
+Magento_Captcha
+Magento_SalesAnalytics
+Magento_SalesInventory
+Magento_OfflineShipping
+Magento_ConfigurableProductSales
+Magento_UrlRewrite
+Magento_CatalogSearch
+Magento_CustomerAnalytics
+Magento_SendFriend
+Magento_Wishlist
+Magento_Signifyd
+Magento_Sitemap
+Magento_Authorizenet
+Magento_Swagger
+Magento_Swatches
+Magento_SwatchesLayeredNavigation
+Magento_Tax
+Magento_TaxImportExport
+Magento_GoogleAdwords
+Magento_Translation
+Magento_GoogleOptimizer
+Magento_Ups
+Magento_SampleData
+Magento_CatalogAnalytics
+Magento_Usps
+Magento_Variable
+Magento_Braintree
+Magento_Version
+Magento_Webapi
+Magento_WebapiSecurity
+Magento_Weee
+Magento_CatalogWidget
+Dotdigitalgroup_Email
+Magento_WishlistAnalytics
+Shopial_Facebook
+Temando_Shipping
+
+List of disabled modules:
+None
+```
+
 ![](/screenshots/magento-222-admin-01.png)
 
 ![](/screenshots/magento-222-admin-01b.png)
@@ -1278,6 +1406,7 @@ Default Magento 2.2.2 theme has up to 168 HTTP requests of which 144 are Javascr
 
 ### nginx configs
 
+* http://devdocs.magento.com/guides/v2.2/install-gde/prereq/nginx.html
 * https://github.com/andrewhowdencom/magento2-1/blob/2.2.1-preview/nginx.conf.sample
 * https://github.com/magento/magento2/pull/11690/files
 * https://github.com/magenx/Magento-nginx-config
@@ -1317,11 +1446,13 @@ Default Magento 2.2.2 theme has up to 168 HTTP requests of which 144 are Javascr
 * https://medium.com/@IvanChepurnyi/do-not-blindly-trust-benchmarks-analyse-them-d56168f77434
 * https://www.keycdn.com/blog/speed-up-magento/
 * https://community.magento.com/t5/Hosting-Performance/CSS-and-JS-loading-WAY-too-slow/m-p/61742#M235
+* http://blog.mageworx.com/2018/02/5-ways-to-improve-magento-2-mobile-speed/
 
 ### magento profiler
 
 * http://devdocs.magento.com/guides/v2.2/config-guide/bootstrap/mage-profiler.html
 * https://amasty.com/knowledge-base/how-to-enable-magento-2-profiler.html
+* https://aionhill.com/8-effective-ways-to-really-boost-magento-page-speed
 
 ### maintenance mode
 
