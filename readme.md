@@ -1,5 +1,12 @@
 # Magento 2.2.2 Install Guide For Centmin Mod Nginx LEMP Stacks
 
+## Table Of Contents
+
+* [Introduction](https://github.com/centminmod/centminmod-magento2#introduction)
+* [Centmin Mod 123.09beta01 LEMP Stack Install](https://github.com/centminmod/centminmod-magento2#centmin-mod-12309beta01-lemp-stack-install)
+* [Magento 2.2.2 Installation](https://github.com/centminmod/centminmod-magento2#magento-222-installation)
+* [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
+
 ## Introduction
 
 This Magento 2.2.2 installation guide is written by George Liu (eva2000) and is **provided as is without any support** and was written specifically for Magento 2.2.2 installs on [Centmin Mod 123.09beta01](https://centminmod.com/) or higher branch LEMP stack installations running Nginx 1.13 branch with PHP-FPM 7.1.x latest (Magento 2.2.2 doesn't support PHP 7.2 yet) and MariaDB 10.1.31 MySQL server. Magento 2.2.2 install below will be via Composer and 100% pure SSH command line install. FTP/SFTP is not used at all. The below Magento install steps could be used to write an automated script to install Magento 2.2.2 on Centmin Mod LEMP stacks purely from SSH command line.
@@ -11,12 +18,6 @@ I have never used Magento before so this is first attempt at installing Magento 
 All below installation steps assume you have thoroughly read those listed official Magento 2.2.2 documentation and links. So if you do not understand any of the SSH commands used, start reading the listed documentation and links below.
 
 ![](/screenshots/magento-222-admin-02.png)
-
-## Table Of Contents
-
-* [Centmin Mod 123.09beta01 LEMP Stack Install](https://github.com/centminmod/centminmod-magento2#centmin-mod-12309beta01-lemp-stack-install)
-* [Magento 2.2.2 Installation](https://github.com/centminmod/centminmod-magento2#magento-222-installation)
-* [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
 
 ## Centmin Mod 123.09beta01 LEMP Stack Install
 
@@ -805,6 +806,20 @@ location ~* (\.php$|\.htaccess$|\.git) {
   include /usr/local/nginx/conf/vts_server.conf;
 }
 ```
+
+End result is Centmin Mod Nginx 1.13 HTTP/2 HTTPS based Magento 2.2.2 installation
+
+![](/screenshots/magento-222-admin-01.png)
+
+![](/screenshots/magento-222-admin-01b.png)
+
+![](/screenshots/magento-222-admin-03.png)
+
+![](/screenshots/magento-222-admin-04.png)
+
+![](/screenshots/magento-222-admin-05.png)
+
+![](/screenshots/magento-222-admin-06.png)
 
 ## Magento Docs & Info Links
 
