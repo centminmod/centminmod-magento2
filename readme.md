@@ -144,10 +144,11 @@ php --ri lzf
 * tune and edit custom php.ini settings via custom separate individual .ini settings files outlined at https://centminmod.com/phpfpm.html
 * create custom .ini settings file at /etc/centminmod/php.d/zzz-zendopcache.ini which overrides default /etc/centminmod/php.d/zendopcache.ini
 * allocate 512MB of memory to Zend Opcache but don't set opcache.validate_timestamps=0 and leave at default opcache.validate_timestamps=1
+* raise opcache.max_accelerated_files to 100,000
 * set memory_limit to 1024MB
 
 ```
-echo -e "memory_limit=1024M\nopcache.memory_consumption=512\nopcache.enable_cli=1\nsession.gc_maxlifetime=86400" > /etc/centminmod/php.d/zzz-zendopcache.ini
+echo -e "memory_limit=1024M\nopcache.max_accelerated_files=100000\nopcache.memory_consumption=512\nopcache.enable_cli=1\nsession.gc_maxlifetime=86400" > /etc/centminmod/php.d/zzz-zendopcache.ini
 fpmrestart
 php --ini
 php --ri "Zend Opcache"
@@ -176,14 +177,14 @@ Startup => OK
 Shared memory model => mmap
 Cache hits => 0
 Cache misses => 0
-Used memory => 21488896
-Free memory => 515382016
+Used memory => 25161376
+Free memory => 511709536
 Wasted memory => 0
 Interned Strings Used memory => 413712
 Interned Strings Free memory => 7974896
 Cached scripts => 0
 Cached keys => 0
-Max keys => 65407
+Max keys => 130987
 OOM restarts => 0
 Hash keys restarts => 0
 Manual restarts => 0
@@ -200,7 +201,7 @@ opcache.revalidate_path => Off => Off
 opcache.log_verbosity_level => 1 => 1
 opcache.memory_consumption => 512 => 512
 opcache.interned_strings_buffer => 8 => 8
-opcache.max_accelerated_files => 65407 => 65407
+opcache.max_accelerated_files => 100000 => 100000
 opcache.max_wasted_percentage => 5 => 5
 opcache.consistency_checks => 0 => 0
 opcache.force_restart_timeout => 180 => 180
@@ -498,11 +499,25 @@ php $WEBROOT/bin/magento deploy:mode:set production
 # optimisations
 n98-magerun2 config:set dev/js/merge_files 1
 n98-magerun2 config:set dev/css/merge_css_files 1
+php $WEBROOT/bin/magento indexer:set-mode schedule design_config_grid customer_grid catalog_product_flat catalog_category_flat catalog_category_product catalog_product_category catalog_product_price catalog_product_attribute cataloginventory_stock catalogrule_rule catalogrule_product catalogsearch_fulltext
 php $WEBROOT/bin/magento setup:static-content:deploy
 php $WEBROOT/bin/magento setup:di:compile
 
 echo "admin url = https://${vhostname}/${BACKEND_FRONTNAME}"
 ```
+
+Optional install [Peformance Dashboard Extension](https://github.com/magehost/performance-dashboard)
+
+```
+composer require magehost/performance-dashboard
+php $WEBROOT/bin/magento module:enable MageHost_PerformanceDashboard
+php $WEBROOT/bin/magento setup:upgrade
+php $WEBROOT/bin/magento setup:di:compile
+php $WEBROOT/bin/magento setup:static-content:deploy --area adminhtml
+composer dump-autoload -o
+chown -R nginx:nginx "/home/nginx/domains/${vhostname}/public"
+```
+
 
 Optional sample data you can install but you need to switch to `developer` mode first to install the sample data. Don't install sample data if you intend to run a production live web site.
 
@@ -1221,6 +1236,7 @@ default Magento modules' status
 php $WEBROOT/bin/magento module:status
 List of enabled modules:
 Magento_Store
+MageHost_PerformanceDashboard
 Magento_Directory
 Magento_AdvancedPricingImportExport
 Magento_Config
@@ -1343,6 +1359,24 @@ List of disabled modules:
 None
 ```
 
+Asynchronous Indexing
+
+```
+php $WEBROOT/bin/magento indexer:show-mode
+Design Config Grid:                                Update by Schedule
+Customer Grid:                                     Update by Schedule
+Product Flat Data:                                 Update by Schedule
+Category Flat Data:                                Update by Schedule
+Category Products:                                 Update by Schedule
+Product Categories:                                Update by Schedule
+Product Price:                                     Update by Schedule
+Product EAV:                                       Update by Schedule
+Stock:                                             Update by Schedule
+Catalog Rule Product:                              Update by Schedule
+Catalog Product Rule:                              Update by Schedule
+Catalog Search:                                    Update by Schedule
+```
+
 ![](/screenshots/magento-222-admin-01.png)
 
 ![](/screenshots/magento-222-admin-01b.png)
@@ -1354,6 +1388,12 @@ None
 ![](/screenshots/magento-222-admin-05.png)
 
 ![](/screenshots/magento-222-admin-06.png)
+
+Performance Dashboard Extension
+
+![](/screenshots/magento-222-admin-07.png)
+
+![](/screenshots/magento-222-admin-08.png)
 
 ## Magento 2 Page Speed Tests
 
@@ -1416,9 +1456,11 @@ Default Magento 2.2.2 theme has up to 168 HTTP requests of which 144 are Javascr
 * http://devdocs.magento.com/guides/v2.2/install-gde/install/cli/install-cli-backup.html
 * https://github.com/MagePsycho/magento2-db-code-backup-bash-script
 
-### migration tools
+### migration info & tools
 
 * http://devdocs.magento.com/guides/v2.2/migration/bk-migration-guide.html
+* https://serverguy.com/magento/migrate-magento-1-magento-2-guide/
+* https://www.cloudways.com/blog/migrate-from-magento-1-to-magento-2/
 * https://github.com/magento/data-migration-tool
 * https://github.com/magento/code-migration
 
@@ -1468,3 +1510,12 @@ php $WEBROOT/bin/magento maintenance:status
 php $WEBROOT/bin/magento maintenance:disable --ip=$MYIP
 php $WEBROOT/bin/magento maintenance:status
 ```
+
+### Magento 2 Blogs
+
+* https://www.cloudways.com/blog/magento/magento-2/
+
+### Magento 2 CLI Commands
+
+* http://devdocs.magento.com/guides/v2.2/config-guide/cli/config-cli-subcommands-index.html
+* https://www.cloudways.com/blog/custom-cli-command-magento-2/
