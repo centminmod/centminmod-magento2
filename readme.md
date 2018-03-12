@@ -236,7 +236,7 @@ Below steps will download Magento 2.2.2 via Composer and use Magento native `bin
 * Install Magento 2.2.2 with randomised backend Admin url address
 * Enable Magento 2 default, full page cache and session caching using Redis caching with full page cache and session caching using faster lz4 compression type instead of default gzip type
 * Flat based catalogue product and categories
-* Async indexing of grids
+* Async indexing
 * Async sending of sales emails
 * magento_umask set to 022
 * Create Centmin Mod Nginx HTTP/2 HTTPS based vhost site with Magento 2 nginx configuration rules modified for Centmin Mod Nginx structured layout
@@ -500,6 +500,7 @@ php $WEBROOT/bin/magento deploy:mode:set production
 n98-magerun2 config:set dev/js/merge_files 1
 n98-magerun2 config:set dev/css/merge_css_files 1
 php $WEBROOT/bin/magento indexer:set-mode schedule design_config_grid customer_grid catalog_product_flat catalog_category_flat catalog_category_product catalog_product_category catalog_product_price catalog_product_attribute cataloginventory_stock catalogrule_rule catalogrule_product catalogsearch_fulltext
+php $WEBROOT/bin/magento module:disable Shopial_Facebook
 php $WEBROOT/bin/magento setup:static-content:deploy
 php $WEBROOT/bin/magento setup:di:compile
 
@@ -545,6 +546,7 @@ n98-magerun2 config:set dev/js/merge_files 0
 n98-magerun2 config:set dev/css/merge_css_files 0
 php $WEBROOT/bin/magento setup:static-content:deploy
 php $WEBROOT/bin/magento setup:di:compile
+composer dump-autoload -o
 # ensure correct Centmin Mod Nginx permissions
 chown -R nginx:nginx "/home/nginx/domains/${vhostname}/public"
 ```
@@ -1484,6 +1486,7 @@ Default Magento 2.2.2 theme has up to 168 HTTP requests of which 144 are Javascr
 
 ### benchmarks & performance
 
+* http://devdocs.magento.com/guides/v2.2/config-guide/cli/config-cli-subcommands-perf-data.html
 * https://community.magento.com/t5/Hosting-Performance/bd-p/Hosting-Performance
 * https://medium.com/@IvanChepurnyi/do-not-blindly-trust-benchmarks-analyse-them-d56168f77434
 * https://www.keycdn.com/blog/speed-up-magento/
@@ -1519,3 +1522,7 @@ php $WEBROOT/bin/magento maintenance:status
 
 * http://devdocs.magento.com/guides/v2.2/config-guide/cli/config-cli-subcommands-index.html
 * https://www.cloudways.com/blog/custom-cli-command-magento-2/
+
+### Magento 2 Extensions
+
+* https://www.weltpixel.com/magento-2-lazy-loading-enhanced.html
