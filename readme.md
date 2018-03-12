@@ -273,7 +273,7 @@ time find var vendor generated pub/static pub/media app/etc -type d -exec chmod 
 chown -R nginx:nginx "/home/nginx/domains/${vhostname}/public"
 chmod u+x bin/magento
 ```
-Now the actual Magento 2.2.2 installing via SSH command line using the Magento binary `$WEBROOT/bin/magento` where `WEBROOT` variable and other installation settings are setup in SSH session variables outlined below. Adjust the variables values as needed. I use `pwgen` password generator command to randomise some parts of the values for database name `DBNAME`, database username `DBUSER`, database user password `DBPASS`, Magento admin user password `ADMINPASS` and the backend Admin url `BACKEND_FRONTNAME`.
+Now the actual Magento 2.2.2 installing via SSH command line using the Magento binary `$WEBROOT/bin/magento` where `WEBROOT` variable and other installation settings are setup in SSH session variables outlined below. Adjust the variables values as needed.
 
 You can use `$WEBROOT/bin/magento list` command to see all available command options.
 
@@ -392,7 +392,7 @@ Available commands:
   varnish:vcl:generate                     Generates Varnish VCL and echos it to the command line
 ```
 
-Define your custom variables for Magento 2.2.2 install
+Define your custom variables for Magento 2.2.2 install. I use `pwgen` password generator command to randomise some parts of the values for database name `DBNAME`, database username `DBUSER`, database user password `DBPASS`, Magento admin user password `ADMINPASS` and the backend Admin url `BACKEND_FRONTNAME`.
 
 
 ```
