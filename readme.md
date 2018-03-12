@@ -1007,6 +1007,185 @@ location ~* (\.php$|\.htaccess$|\.git) {
 
 End result is Centmin Mod Nginx 1.13 HTTP/2 HTTPS based Magento 2.2.2 installation
 
+system info
+
+```
+n98-magerun2 sys:info --skip-root-check
+
+                              
+  Magento System Information  
+                              
+
++------------------+-----------------------------------------------+
+| name             | value                                         |
++------------------+-----------------------------------------------+
+| Name             | Magento                                       |
+| Version          | 2.2.2                                         |
+| Edition          | Community                                     |
+| Root             | /home/nginx/domains/magento.domain.com/public |
+| Application Mode | production                                    |
+| Session          | redis                                         |
+| Crypt Key        | d45f000b87ce82******************              |
+| Install Date     | Sun, 11 Mar 2018 20:40:12 +0000               |
+| Cache Backend    | Cm_Cache_Backend_Redis                        |
+| Vendors          | Magento, Dotdigitalgroup, Shopial, Temando    |
+| Attribute Count  | 134                                           |
+| Customer Count   | 0                                             |
+| Category Count   | 2                                             |
+| Product Count    | 0                                             |
++------------------+-----------------------------------------------+
+```
+
+system check
+
+```
+n98-magerun2 sys:check --skip-root-check
+
+                                                                
+                            SETTINGS                            
+                                                                
+
+✔ Secure BaseURL: https://magento.domain.com/ of Store: default - OK
+✔ Unsecure BaseURL: https://magento.domain.com/ of Store: default - OK
+✔ Empty cookie Domain (secure) of Store: default - OK
+✔ Empty cookie Domain (unsecure) of Store: default - OK
+
+                                                                
+                           FILESYSTEM                           
+                                                                
+
+✔ Folder pub/media found.
+✔ Folder var found.
+✖ Folder var/cache not found! Usage: Used for caching
+✔ Folder var/session found.
+✔ File app/etc/env.php found.
+
+                                                                
+                              PHP                               
+                                                                
+
+✔ Required PHP Module simplexml found.
+✔ Required PHP Module mcrypt found.
+✔ Required PHP Module hash found.
+✔ Required PHP Module gd found.
+✔ Required PHP Module dom found.
+✔ Required PHP Module iconv found.
+✔ Required PHP Module curl found.
+✔ Required PHP Module soap found.
+✔ Required PHP Module pdo found.
+✔ Required PHP Module pdo_mysql found.
+✔ Required PHP Module intl found.
+✔ Required PHP Module openssl found.
+✔ Bytecode Cache Zend OPcache found.
+
+                                                                
+                             MYSQL                              
+                                                                
+
+✔ MySQL Version 10.1.31-MariaDB found.
+✔ Required MySQL Storage Engine InnoDB found.
+```
+
+database info
+
+```
+n98-magerun2 db:info --skip-root-check  
++------------------------+----------------------------------------------------------------------------------------------------+
+| Name                   | Value                                                                                              |
++------------------------+----------------------------------------------------------------------------------------------------+
+| host                   | localhost                                                                                          |
+| dbname                 | magento2*****                                                                                      |
+| username               | magento2a6********                                                                                 |
+| password               | jIPa748zeZ***********                                                                              |
+| model                  | mysql4                                                                                             |
+| engine                 | innodb                                                                                             |
+| initStatements         | SET NAMES utf8;                                                                                    |
+| active                 | 1                                                                                                  |
+| prefix                 | mags_                                                                                              |
+| PDO-Connection-String  | mysql:host=localhost;port=3306;dbname=magento2****                                                 |
+| JDBC-Connection-String | jdbc:mysql://localhost:3306/magento2****?username=magento2a6*******&password=jjIPa748zeZ********** |
+| MySQL-Cli-String       | mysql -h'localhost' -u'magento2a6*******' --password='jjIPa748zeZ**********' 'magento2****'        |
++------------------------+----------------------------------------------------------------------------------------------------+
+```
+
+database server status
+
+```
+n98-magerun2 db:status --skip-root-check
++--------------------------------+--------------+-----------------------------------------------------------------------------+
+| Variable Name                  | Value        | Description                                                                 |
++--------------------------------+--------------+-----------------------------------------------------------------------------+
+| Aborted_connects               |            0 | Total number of failed attempts to connect to MySQL.                        |
+| Created_tmp_disk_tables        |          406 | Number of temporary tables that have been created on disk instead of        |
+|                                |              | in-memory. Lower is better.                                                 |
+| Handler_read_first             |         6422 | Number of times a table handler made a request to read the first row of a   |
+|                                |              | table index.                                                                |
+| Handler_read_rnd_next          |      7280977 | Number of requests to read the next row in the data file. This value is     |
+|                                |              | high if you are doing a lot of table scans. Generally this suggests that    |
+|                                |              | your tables are not properly indexed or that your queries are not written   |
+|                                |              | to take advantage of the indexes you have.                                  |
+| Innodb_buffer_pool_pages_dirty |            0 | Indicates the number of InnoDB buffer pool data pages that have been        |
+|                                |              | changed in memory, but the changes are not yet written (flushed) to the     |
+|                                |              | InnoDB data files                                                           |
+| Innodb_buffer_pool_wait_free   |            0 | Number of times MySQL has to wait for memory pages to be flushed.           |
+| Key_reads                      |            9 | Number of filesystem accesses MySQL performed to fetch database indexes.    |
+| Max_used_connections           |           12 | Max number of connections MySQL has had open at the same time since the     |
+|                                |              | server was last restarted.                                                  |
+| Open_tables                    |          398 | Number of tables that are currently open.                                   |
+| Select_full_join               |           11 | Number of full joins MySQL has performed to satisfy client queries.         |
+| Slow_queries                   |            0 | Number of queries that have taken longer than usual to execute.             |
+| Threads_connected              |            1 | Total number of clients that have currently open connections to the server. |
+| Uptime                         | 19 hours ago | Time since the server was last restarted.                                   |
+| Full table scans               | 69.86%       | HINT: "Handler_read_rnd_next" is reset to zero when reached the value of    |
+|                                |              | 2^32 (4G).                                                                  |
+| InnoDB Buffer Pool hit         | 100.00%      | An InnoDB Buffer Pool hit ratio below 99.9% is a weak indicator that your   |
+|                                |              | InnoDB Buffer Pool could be increased.                                      |
++--------------------------------+--------------+-----------------------------------------------------------------------------+
+```
+
+MariaDB server variables of note
+
+```
+n98-magerun2 db:variables --skip-root-check
++---------------------------------+--------+
+| Variable Name                   | Value  |
++---------------------------------+--------+
+| have_query_cache                |    YES |
+| innodb_additional_mem_pool_size |     8M |
+| innodb_buffer_pool_size         |   192M |
+| innodb_log_buffer_size          |     8M |
+| innodb_log_file_size            |   128M |
+| innodb_thread_concurrency       |      0 |
+| join_buffer_size                |   128K |
+| key_buffer_size                 |    32M |
+| max_allowed_packet              |    64M |
+| max_connections                 |    300 |
+| max_heap_table_size             |   128M |
+| open_files_limit                | 524288 |
+| query_cache_size                |    64M |
+| query_cache_type                |     ON |
+| read_buffer_size                |   128K |
+| read_rnd_buffer_size            |   256K |
+| sort_buffer_size                |   256K |
+| table_definition_cache          |   8192 |
+| table_open_cache                |   4096 |
+| thread_cache_size               |   128B |
+| tmp_table_size                  |   128M |
++---------------------------------+--------+
+```
+
+Magento 2 database engine breakdown stats
+
+```
+echo "SELECT engine, count(*) tables, concat(round(sum(table_rows))) rows, concat(round(sum(data_length)/(1024*1024),2),'MB') data, concat(round(sum(index_length)/(1024*1024),2),'MB') idx, concat(round(sum(data_length+index_length)/(1024*1024),2),'MB') total_size, round(sum(index_length)/sum(data_length),2) idxfrac FROM information_schema.TABLES WHERE table_schema LIKE '$DBNAME' GROUP BY engine ORDER BY sum(data_length+index_length) DESC LIMIT 10;" | mysql -t
++--------+--------+------+--------+---------+------------+---------+
+| engine | tables | rows | data   | idx     | total_size | idxfrac |
++--------+--------+------+--------+---------+------------+---------+
+| InnoDB |    326 | 5535 | 5.59MB | 11.88MB | 17.47MB    |    2.12 |
+| MEMORY |     14 | 0    | 0.00MB | 0.00MB  | 0.00MB     |    NULL |
++--------+--------+------+--------+---------+------------+---------+
+```
+
 ![](/screenshots/magento-222-admin-01.png)
 
 ![](/screenshots/magento-222-admin-01b.png)
