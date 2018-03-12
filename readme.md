@@ -11,9 +11,10 @@ I have never used Magento before so this is first attempt at installing Magento 
 All below installation steps assume you have thoroughly read those listed official Magento 2.2.2 documentation and links. So if you do not understand any of the SSH commands used, start reading the listed documentation and links below.
 
 ## Table Of Contents
-* Centmin Mod 123.09beta01 LEMP Stack Install
-* Magento 2.2.2 Installation
-* Magento Docs & Info Links
+
+* [Centmin Mod 123.09beta01 LEMP Stack Install](https://github.com/centminmod/centminmod-magento2#centmin-mod-12309beta01-lemp-stack-install)
+* [Magento 2.2.2 Installation](https://github.com/centminmod/centminmod-magento2#magento-222-installation)
+* [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
 
 ## Centmin Mod 123.09beta01 LEMP Stack Install
 
