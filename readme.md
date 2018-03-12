@@ -58,7 +58,7 @@ Magento 2.2.2 install is done purely via SSH command line and the test KVM VPS s
 
 ### Step 1. Get Magento Authentication Keys
 
-To install Magento via Composer, you need to register an account to get the Authentication Keys from [Magento Markplace](https://marketplace.magento.com/) and log in and go to Account Profile, Market Place tab and Access Keys to generate a set of Authentictaion Keys. In step 2 next, tou will use the public key to assign to SSH variable `magentouser_key`and private key to assign to SSH variable `magentouser_pass`.
+To install Magento via Composer, you need to register an account to get the Authentication Keys from [Magento Markplace](https://marketplace.magento.com/) and log in and go to Account Profile, Market Place tab and Access Keys to generate a set of Authentictaion Keys. In step 2 next, you will use the public key to assign to SSH variable `magentouser_key`and private key to assign to SSH variable `magentouser_pass`.
 
 ### Step 2. Install Magento required components and optional components for optimal performance
 
