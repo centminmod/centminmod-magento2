@@ -9,7 +9,7 @@
 
 ## Introduction
 
-This Magento 2.2.2 installation guide is written by George Liu (eva2000) and is **provided as is without any support** and was written specifically for Magento 2.2.2 installs on [Centmin Mod 123.09beta01](https://centminmod.com/) or higher branch LEMP stack installations running Nginx 1.13 branch with PHP-FPM 7.1.x latest (Magento 2.2.2 doesn't support PHP 7.2 yet) and MariaDB 10.1.31 MySQL server. Magento 2.2.2 install below will be via Composer download and native Magento binary command tool and is 100% pure SSH command line install. FTP/SFTP is not used at all. The below Magento install steps could be used to write an automated script to install Magento 2.2.2 on Centmin Mod LEMP stacks purely from SSH command line.
+This Magento 2.2.2 installation guide is written by George Liu (eva2000) and is **provided as is without any support** and was written specifically for Magento 2.2.2 installs on [Centmin Mod 123.09beta01](https://centminmod.com/) or higher branch LEMP stack installations running Nginx 1.13 branch with PHP-FPM 7.1.x latest (Magento 2.2.2 doesn't support PHP 7.2 yet) and MariaDB 10.1.31 MySQL server. Magento 2.2.2 install below will be via Composer download and native Magento binary command tool and is 100% pure SSH command line install. FTP/SFTP is not used at all. The below Magento install steps could be used to write an automated script to install Magento 2.2.2 on Centmin Mod LEMP stacks purely from SSH command line. Maybe something planned on offer to [Centmin Mod Premium Members](https://community.centminmod.com/premium/).
 
 **Disclaimer:** 
 
