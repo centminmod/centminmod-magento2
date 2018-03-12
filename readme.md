@@ -159,7 +159,7 @@ check memory_limit
 
 ```
 php -i | grep memory_limit
-memory_limit => 1024M => 1024M
+memory_limit => 1024M
 ```
 
 check Zend Opcache settings
