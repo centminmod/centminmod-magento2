@@ -231,7 +231,7 @@ Below steps will download Magento 2.2.2 via Composer and use Magento native `bin
 * magento_umask set to 022
 * Create Centmin Mod Nginx HTTP/2 HTTPS based vhost site with Magento 2 nginx configuration rules modified for Centmin Mod Nginx structured layout
 
-First use `nv` command to create a Centmin Mod Nginx HTTP/2 HTTPS vhost site with a new `magento2` system user and default `vhostname='magento.domain.com'`variable in SSH session which will be referenced in below steps as `$vhostname` variable.
+First use `nv` command outlined [here](https://centminmod.com/nginx_domain_dns_setup.html) to create a Centmin Mod Nginx HTTP/2 HTTPS vhost site with a new `magento2` system user and default `vhostname='magento.domain.com'`variable in SSH session which will be referenced in below steps as `$vhostname` variable.
 
 ```
 # setup centmin mod nginx http/2 https vhost site
