@@ -1387,7 +1387,7 @@ Catalog Search:                                    Update by Schedule
 
 ![](/screenshots/magento-222-admin-05.png)
 
-![](/screenshots/magento-222-admin-06.png)
+![](/screenshots/magento-222-admin-06b.png)
 
 Performance Dashboard Extension
 
