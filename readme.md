@@ -1961,6 +1961,46 @@ thread 1 made 342 requests and got 340 responses
 thread 2 made 345 requests and got 344 responses
 ```
 
+Magento 2 Redis caching still has to go through Nginx and PHP-FPM to be processed so there is still PHP-FPM load to deal with it seems. So looks like [Varnish Caching for Magento 2 full page caching](http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish.html) would be a better option. Varnsih Cache added HTTP/2 support in 5.0 but isn't enabled out of box and Varnish HTTP/2 support is still work in progress with Varnish Cache 5.1, 5.2+ [details](https://varnish-cache.org/docs/5.2/whats-new/changes-5.1.html#progress-on-http-2-support).
+
+During wrk-cmm load testing run top stats.
+
+```
+top -c
+top - 10:04:41 up  1:14,  2 users,  load average: 1.15, 0.94, 0.82
+Tasks: 119 total,  20 running,  99 sleeping,   0 stopped,   0 zombie
+%Cpu0  : 81.6 us, 16.4 sy,  0.0 ni,  0.3 id,  0.0 wa,  0.0 hi,  1.6 si,  0.0 st
+%Cpu1  : 79.5 us, 18.5 sy,  0.0 ni,  0.3 id,  0.0 wa,  0.0 hi,  1.7 si,  0.0 st
+%Cpu2  : 77.6 us, 20.1 sy,  0.0 ni,  0.3 id,  0.0 wa,  0.0 hi,  2.0 si,  0.0 st
+%Cpu3  : 76.9 us, 20.8 sy,  0.0 ni,  0.0 id,  0.0 wa,  0.0 hi,  2.3 si,  0.0 st
+KiB Mem :  3881428 total,  2639780 free,   517272 used,   724376 buff/cache
+KiB Swap:  4194300 total,  4194300 free,        0 used.  3022348 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                     
+  760 redis     20   0  159424   7524   1552 R  32.6  0.2   0:25.46 redis-server                                                
+11543 nginx     10 -10  157724  45128   2300 S  20.0  1.2   0:12.43 nginx                                                       
+13033 nginx     20   0  918384  27584  14580 R  20.0  0.7   0:01.47 php-fpm                                                     
+13027 nginx     20   0  918384  27576  14572 R  19.0  0.7   0:01.56 php-fpm                                                     
+13035 nginx     20   0  918384  27580  14576 R  18.7  0.7   0:01.59 php-fpm                                                     
+13032 nginx     20   0  918384  27580  14576 R  18.4  0.7   0:01.52 php-fpm                                                     
+13021 nginx     20   0  918480  27688  14588 R  18.1  0.7   0:02.20 php-fpm                                                     
+13031 nginx     20   0  918384  27580  14576 R  18.1  0.7   0:01.48 php-fpm                                                     
+13026 nginx     20   0  918384  27580  14576 R  17.7  0.7   0:01.85 php-fpm                                                     
+13029 nginx     20   0  918384  27576  14572 R  17.7  0.7   0:01.68 php-fpm                                                     
+13030 nginx     20   0  918384  27580  14576 R  17.7  0.7   0:01.58 php-fpm                                                     
+13036 nginx     20   0  918384  27580  14576 S  17.7  0.7   0:01.48 php-fpm                                                     
+13022 nginx     20   0  918384  27580  14576 R  17.4  0.7   0:02.20 php-fpm                                                     
+13023 nginx     20   0  918420  27620  14584 R  17.4  0.7   0:02.07 php-fpm                                                     
+13025 nginx     20   0  918384  27576  14576 R  17.4  0.7   0:02.26 php-fpm                                                     
+13034 nginx     20   0  918384  27580  14576 R  17.4  0.7   0:01.49 php-fpm                                                     
+13024 nginx     20   0  918468  27684  14588 R  17.1  0.7   0:02.28 php-fpm                                                     
+13028 nginx     20   0  918384  27576  14572 R  16.5  0.7   0:01.61 php-fpm                                                     
+11545 nginx     10 -10  153628  44512   2284 S  16.1  1.1   0:08.60 nginx                                                       
+11547 nginx     10 -10  157724  44672   2224 R  14.8  1.2   0:10.76 nginx                                                       
+11544 nginx     10 -10  153628  44512   2264 R  10.6  1.1   0:09.73 nginx                                                       
+13018 root      20   0  307660   8072   2360 S   6.8  0.2   0:00.57 wrk-cmm
+```
+
 ## Magento Docs & Info Links
 
 ### community
