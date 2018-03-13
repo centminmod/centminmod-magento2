@@ -1871,6 +1871,35 @@ Redis server can be configured to default TCP mode or you can take advantage of 
 
 Quick benchmarks are below of Redis caching TCP vs Unix Socket using my custom forked [wrk-cmm](https://github.com/centminmod/wrk/tree/centminmod) load testing tool. Pay particular attention to latency distribution at 99% percentile mark and requests/sec and thread stats for Time To First Byte (TTFB) differences. Below wrk-cmm tests were lightl testing with 2 threads and 2 concurrent users over 10 second duration and testing for gzip encoded compressed HTTP requests.
 
+Current Magento System Info
+
+```
+n98-magerun2 sys:info --skip-root-check
+
+                              
+  Magento System Information  
+                              
+
++------------------+-----------------------------------------------+
+| name             | value                                         |
++------------------+-----------------------------------------------+
+| Name             | Magento                                       |
+| Version          | 2.2.2                                         |
+| Edition          | Community                                     |
+| Root             | /home/nginx/domains/magento.domain.com/public |
+| Application Mode | production                                    |
+| Session          | redis                                         |
+| Crypt Key        | d45f000b87ce82*******************             |
+| Install Date     | Sun, 11 Mar 2018 20:40:12 +0000               |
+| Cache Backend    | Cm_Cache_Backend_Redis                        |
+| Vendors          | Magento, MageHost, Dotdigitalgroup, Temando   |
+| Attribute Count  | 134                                           |
+| Customer Count   | 0                                             |
+| Category Count   | 2                                             |
+| Product Count    | 0                                             |
++------------------+-----------------------------------------------+
+```
+
 Redis TCP Mode
 
 ```
@@ -2001,6 +2030,245 @@ KiB Swap:  4194300 total,  4194300 free,        0 used.  3022348 avail Mem
 13018 root      20   0  307660   8072   2360 S   6.8  0.2   0:00.57 wrk-cmm
 ```
 
+#### Benchmarks with Redis caching disabled
+
+Benchmarks with Redis caching disabled and switching caching to file based so only slightly less performance that Redis caching in terms of average throughput at 60 requests/s versus 65-68 requests/s with Redis caching. But 99% percentile latency response times were much slower with file based caching at 292 ms vs 75-80ms with Redis caching. Thread TTFB latency max was also much higher with file based caching at 357+ ms versus Redis cached thread TTFB latency at 134-158 ms.
+
+```
+wrk-cmm -t2 -c2 -d10s --breakout -H 'Accept-Encoding: gzip' -s scripts/setup.lua --latency $domain
+thread 1 created
+thread 2 created
+Running 10s test @ https://magento.domain.com
+  2 threads and 2 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    39.78ms   43.07ms 357.86ms   95.21%
+    Connect    15.02ms    1.14ms  15.83ms  100.00%
+    TTFB       39.35ms   42.99ms 357.27ms   95.22%
+    TTLB      426.65us  153.00us   3.21ms   90.85%
+    Req/Sec    31.85      7.32    40.00     64.74%
+  Latency Distribution
+     50%   29.49ms
+     75%   31.51ms
+     90%   39.24ms
+     99%  292.20ms
+  612 requests in 10.05s, 4.33MB read
+Requests/sec:     60.92
+Transfer/sec:    441.84KB
+thread 1 made 315 requests and got 313 responses
+thread 2 made 300 requests and got 299 responses
+```
+
+Set session-save to files based
+
+```
+php $WEBROOT/bin/magento setup:config:set --session-save=files
+```
+
+manually remove app/etc/env.php entries for Redis backend and full page caching
+
+```
+php $WEBROOT/bin/magento cache:flush
+php $WEBROOT/bin/magento deploy:mode:set production
+chown -R nginx:nginx "/home/nginx/domains/magento.domain.com/public"
+```
+
+```
+n98-magerun2 sys:info --skip-root-check
+
+                              
+  Magento System Information  
+                              
+
++------------------+-----------------------------------------------+
+| name             | value                                         |
++------------------+-----------------------------------------------+
+| Name             | Magento                                       |
+| Version          | 2.2.2                                         |
+| Edition          | Community                                     |
+| Root             | /home/nginx/domains/magento.domain.com/public |
+| Application Mode | production                                    |
+| Session          | files                                         |
+| Crypt Key        | d45f000b87ce82*******************             |
+| Install Date     | Sun, 11 Mar 2018 20:40:12 +0000               |
+| Cache Backend    | Cm_Cache_Backend_File                         |
+| Vendors          | Magento, MageHost, Dotdigitalgroup, Temando   |
+| Attribute Count  | 134                                           |
+| Customer Count   | 0                                             |
+| Category Count   | 2                                             |
+| Product Count    | 0                                             |
++------------------+-----------------------------------------------+
+```
+
+file based full page caching
+
+```
+ls -lahrt var/page_cache/mage--3/
+total 48K
+drwxrwsr-x. 5 nginx nginx 4.0K Mar 13 13:29 ..
+drwxrwxrwx  2 nginx nginx 4.0K Mar 13 13:29 .
+-rw-rw----  1 nginx nginx  38K Mar 13 13:29 mage---495_FD9FFAEA25F37BB543E29CD5BBAB6A81BF0BA03
+```
+
+file based session caching
+
+```
+ls -lhrt var/session/ | tail -10 
+-rw------- 1 nginx nginx 157 Mar 13 13:25 sess_lfqapeotn2u03plhj6h0kdqeb6
+-rw------- 1 nginx nginx 157 Mar 13 13:26 sess_i6uamdosufdodse1l4olkrr5q0
+-rw------- 1 nginx nginx 157 Mar 13 13:27 sess_9dc14co3me6eq7lkbjtgaf03im
+-rw------- 1 nginx nginx 157 Mar 13 13:28 sess_kf1bgo6hgaletafdia83or4b4f
+-rw------- 1 nginx nginx 157 Mar 13 13:29 sess_5cd5jvoouvn7hv9giro95t5h5s
+-rw------- 1 nginx nginx 607 Mar 13 13:29 sess_fu48njb7u7eu4qj6qvjof8ktsv
+-rw------- 1 nginx nginx 157 Mar 13 13:30 sess_2s8os32p7rmd74n7rn0e4doenf
+-rw------- 1 nginx nginx 157 Mar 13 13:31 sess_ri4j18hb9vdvbav1pj4meg3l8p
+-rw------- 1 nginx nginx 157 Mar 13 13:32 sess_rf82e1tn0ppp2597rbm3304v2i
+-rw------- 1 nginx nginx 157 Mar 13 13:33 sess_lvupdn2j6m49mib8ra8nraft01
+```
+
+comparing `app/etc/env.php` file based caching versus `app/etc/env.php.redisset` with Redis session, backend and full page caching
+
+```
+diff -u app/etc/env.php app/etc/env.php.redisset
+--- app/etc/env.php     2018-03-13 13:25:50.794181470 +0000
++++ app/etc/env.php.redisset    2018-03-13 05:30:56.948206383 +0000
+@@ -37,7 +37,28 @@
+   'MAGE_MODE' => 'production',
+   'session' => 
+   array (
+-    'save' => 'files',
++    'save' => 'redis',
++    'redis' => 
++    array (
++      'host' => '127.0.0.1',
++      'port' => '6379',
++      'password' => '',
++      'timeout' => '2.5',
++      'persistent_identifier' => '',
++      'database' => '14',
++      'compression_threshold' => '2048',
++      'compression_library' => 'lz4',
++      'log_level' => '3',
++      'max_concurrency' => '4',
++      'break_after_frontend' => '60',
++      'break_after_adminhtml' => '60',
++      'first_lifetime' => '600',
++      'bot_first_lifetime' => '60',
++      'bot_lifetime' => '7200',
++      'disable_locking' => '0',
++      'min_lifetime' => '60',
++      'max_lifetime' => '2592000',
++    ),
+   ),
+   'cache_types' => 
+   array (
+@@ -60,6 +81,33 @@
+   array (
+     'date' => 'Sun, 11 Mar 2018 20:40:12 +0000',
+   ),
++  'cache' => 
++  array (
++    'frontend' => 
++    array (
++      'default' => 
++      array (
++        'backend' => 'Cm_Cache_Backend_Redis',
++        'backend_options' => 
++        array (
++          'server' => '127.0.0.1',
++          'database' => '12',
++          'port' => '6379',
++        ),
++      ),
++      'page_cache' => 
++      array (
++        'backend' => 'Cm_Cache_Backend_Redis',
++        'backend_options' => 
++        array (
++          'server' => '127.0.0.1',
++          'database' => '13',
++          'port' => '6379',
++          'compress_data' => 'lz4',
++        ),
++      ),
++    ),
++  ),
+   'system' => 
+   array (
+     'default' =>  
+```
+
+comparing `app/etc/env.php.redisset` with Redis session, backend and full page caching versus `app/etc/env.php` file based caching
+
+```
+diff -u app/etc/env.php.redisset app/etc/env.php
+--- app/etc/env.php.redisset    2018-03-13 05:30:56.948206383 +0000
++++ app/etc/env.php     2018-03-13 13:25:50.794181470 +0000
+@@ -37,28 +37,7 @@
+   'MAGE_MODE' => 'production',
+   'session' => 
+   array (
+-    'save' => 'redis',
+-    'redis' => 
+-    array (
+-      'host' => '127.0.0.1',
+-      'port' => '6379',
+-      'password' => '',
+-      'timeout' => '2.5',
+-      'persistent_identifier' => '',
+-      'database' => '14',
+-      'compression_threshold' => '2048',
+-      'compression_library' => 'lz4',
+-      'log_level' => '3',
+-      'max_concurrency' => '4',
+-      'break_after_frontend' => '60',
+-      'break_after_adminhtml' => '60',
+-      'first_lifetime' => '600',
+-      'bot_first_lifetime' => '60',
+-      'bot_lifetime' => '7200',
+-      'disable_locking' => '0',
+-      'min_lifetime' => '60',
+-      'max_lifetime' => '2592000',
+-    ),
++    'save' => 'files',
+   ),
+   'cache_types' => 
+   array (
+@@ -81,33 +60,6 @@
+   array (
+     'date' => 'Sun, 11 Mar 2018 20:40:12 +0000',
+   ),
+-  'cache' => 
+-  array (
+-    'frontend' => 
+-    array (
+-      'default' => 
+-      array (
+-        'backend' => 'Cm_Cache_Backend_Redis',
+-        'backend_options' => 
+-        array (
+-          'server' => '127.0.0.1',
+-          'database' => '12',
+-          'port' => '6379',
+-        ),
+-      ),
+-      'page_cache' => 
+-      array (
+-        'backend' => 'Cm_Cache_Backend_Redis',
+-        'backend_options' => 
+-        array (
+-          'server' => '127.0.0.1',
+-          'database' => '13',
+-          'port' => '6379',
+-          'compress_data' => 'lz4',
+-        ),
+-      ),
+-    ),
+-  ),
+   'system' => 
+   array (
+     'default' => 
+```
+
 ## Magento Docs & Info Links
 
 ### community
@@ -2088,6 +2356,7 @@ KiB Swap:  4194300 total,  4194300 free,        0 used.  3022348 avail Mem
 * https://community.magento.com/t5/Hosting-Performance/CSS-and-JS-loading-WAY-too-slow/m-p/61742#M235
 * http://blog.mageworx.com/2018/02/5-ways-to-improve-magento-2-mobile-speed/
 * https://servebolt.com/performance-magento-2-demo-store-new-york/
+* https://amasty.com/blog/magento-1-2-performance-speed-php-5-php-7/
 
 ### magento profiler
 
@@ -2123,3 +2392,5 @@ php $WEBROOT/bin/magento maintenance:status
 
 * https://www.weltpixel.com/magento-2-lazy-loading-enhanced.html
 * https://marketplace.magento.com/innovo-module-cache-improve.html
+* https://amasty.com/magento-full-page-cache.html
+* https://github.com/AmastyLtd/improved-search
