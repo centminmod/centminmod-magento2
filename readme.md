@@ -120,7 +120,7 @@ You can also remove the Redis TCP overhead in /etc/redis.conf by also enabling u
 # on a unix socket when not specified.
 #
 unixsocket /var/run/redis/redis.sock
-unixsocketperm 755
+unixsocketperm 777
 ```
 
 restart redis server
@@ -1847,34 +1847,24 @@ Redis server can be configured to default TCP mode or you can take advantage of 
 
 Quick benchmarks are below of Redis caching TCP vs Unix Socket using my custom forked [wrk-cmm](https://github.com/centminmod/wrk/tree/centminmod) load testing tool. Pay particular attention to latency distribution at 99% percentile mark and requests/sec and thread stats for Time To First Byte (TTFB) differences. Below wrk-cmm tests were lightl testing with 2 threads and 2 concurrent users over 10 second duration and testing for gzip encoded compressed HTTP requests.
 
-Redis TCP Mode with 99% percentile latency times = 49.54ms and 82.38 requests/s and thread TTFB Avg = 356.80us
+Redis TCP Mode
 
 ```
-domain=https://magento.domain.com
-wrk-cmm -t2 -c2 -d10s --breakout -H 'Accept-Encoding: gzip' -s scripts/setup.lua --latency $domain 
-thread 1 created
-thread 2 created
-Running 10s test @ https://magento.domain.com
-  2 threads and 2 connections
-  Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    24.56ms    7.78ms 122.37ms   95.82%
-    Connect     8.71ms  755.90us   9.24ms  100.00%
-    TTFB       24.20ms    7.75ms 121.37ms   95.69%
-    TTLB      356.80us  361.60us   3.46ms   97.58%
-    Req/Sec    41.52      6.60    50.00     63.64%
-  Latency Distribution
-     50%   23.10ms
-     75%   25.52ms
-     90%   29.10ms
-     99%   49.54ms
-  828 requests in 10.05s, 5.86MB read
-Requests/sec:     82.38
-Transfer/sec:    597.11KB
-thread 1 made 416 requests and got 414 responses
-thread 2 made 415 requests and got 414 responses
-```
+redisserver=127.0.0.1
+# lz4 or gzip
+compresstype=lz4
+php $WEBROOT/bin/magento setup:config:set --cache-backend=redis --cache-backend-redis-server=$redisserver --cache-backend-redis-db=12
 
-Redis Unix socket Mode with 99% percentile latency times = 20.84ms and 361.34 requests/s and thread TTFB Avg = 40.84us
+php $WEBROOT/bin/magento setup:config:set --page-cache=redis --page-cache-redis-server=$redisserver --page-cache-redis-db=13 --page-cache-redis-compress-data=$compresstype
+
+php $WEBROOT/bin/magento setup:config:set --session-save=redis --session-save-redis-host=$redisserver --session-save-redis-log-level=3 --session-save-redis-db=14 --session-save-redis-compression-lib=$compresstype --session-save-redis-max-concurrency=4 --session-save-redis-first-lifetime=600 --session-save-redis-bot-first-lifetime=60 --session-save-redis-bot-lifetime=7200 --session-save-redis-min-lifetime=60 --session-save-redis-max-lifetime=2592000 --session-save-redis-break-after-frontend=60 --session-save-redis-break-after-adminhtml=60
+
+php $WEBROOT/bin/magento setup:static-content:deploy
+php $WEBROOT/bin/magento setup:di:compile
+composer dump-autoload -o
+# ensure correct Centmin Mod Nginx permissions
+chown -R nginx:nginx "/home/nginx/domains/${vhostname}/public"
+```
 
 ```
 domain=https://magento.domain.com
@@ -1884,22 +1874,65 @@ thread 2 created
 Running 10s test @ https://magento.domain.com
   2 threads and 2 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     5.87ms    4.72ms  86.26ms   97.82%
-    Connect     2.24ms    2.39ms   6.05ms   75.00%
-    TTFB        5.82ms    4.69ms  85.82ms   97.81%
-    TTLB       40.84us   30.52us 361.00us   89.16%
-    Req/Sec   181.51     27.95   232.00     83.00%
+    Latency    31.15ms   10.16ms 158.71ms   97.59%
+    Connect    14.00ms    5.32ms  17.76ms  100.00%
+    TTFB       30.83ms   10.10ms 158.42ms   97.89%
+    TTLB      316.32us  266.73us   4.59ms   97.25%
+    Req/Sec    32.83      5.93    40.00     62.63%
   Latency Distribution
-     50%    5.25ms
-     75%    5.75ms
-     90%    6.55ms
-     99%   20.84ms
-  3635 requests in 10.06s, 1.44MB read
-  Non-2xx or 3xx responses: 3635
-Requests/sec:    361.34
-Transfer/sec:    146.79KB
-thread 1 made 1815 requests and got 1813 responses
-thread 2 made 1823 requests and got 1822 responses
+     50%   29.45ms
+     75%   31.67ms
+     90%   35.71ms
+     99%   80.05ms
+  655 requests in 10.06s, 4.64MB read
+Requests/sec:     65.14
+Transfer/sec:    472.44KB
+thread 1 made 330 requests and got 328 responses
+thread 2 made 328 requests and got 327 responses
+```
+
+Redis Unix socket Mode
+
+```
+redisserver=/var/run/redis/redis.sock
+# lz4 or gzip
+compresstype=lz4
+php $WEBROOT/bin/magento setup:config:set --cache-backend=redis --cache-backend-redis-server=$redisserver --cache-backend-redis-db=12
+
+php $WEBROOT/bin/magento setup:config:set --page-cache=redis --page-cache-redis-server=$redisserver --page-cache-redis-db=13 --page-cache-redis-compress-data=$compresstype
+
+php $WEBROOT/bin/magento setup:config:set --session-save=redis --session-save-redis-host=$redisserver --session-save-redis-log-level=3 --session-save-redis-db=14 --session-save-redis-compression-lib=$compresstype --session-save-redis-max-concurrency=4 --session-save-redis-first-lifetime=600 --session-save-redis-bot-first-lifetime=60 --session-save-redis-bot-lifetime=7200 --session-save-redis-min-lifetime=60 --session-save-redis-max-lifetime=2592000 --session-save-redis-break-after-frontend=60 --session-save-redis-break-after-adminhtml=60
+
+php $WEBROOT/bin/magento setup:static-content:deploy
+php $WEBROOT/bin/magento setup:di:compile
+composer dump-autoload -o
+# ensure correct Centmin Mod Nginx permissions
+chown -R nginx:nginx "/home/nginx/domains/${vhostname}/public"
+```
+
+```
+domain=https://magento.domain.com
+wrk-cmm -t2 -c2 -d10s --breakout -H 'Accept-Encoding: gzip' -s scripts/setup.lua --latency $domain
+thread 1 created
+thread 2 created
+Running 10s test @ https://magento.domain.com
+  2 threads and 2 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    29.77ms    9.12ms 134.42ms   96.97%
+    Connect     9.30ms    4.76ms  12.67ms  100.00%
+    TTFB       29.46ms    9.08ms 134.08ms   96.97%
+    TTLB      306.88us  212.53us   2.83ms   97.51%
+    Req/Sec    34.26      6.07    40.00     97.47%
+  Latency Distribution
+     50%   28.09ms
+     75%   30.42ms
+     90%   33.51ms
+     99%   75.62ms
+  684 requests in 10.05s, 4.84MB read
+Requests/sec:     68.04
+Transfer/sec:    493.39KB
+thread 1 made 342 requests and got 340 responses
+thread 2 made 345 requests and got 344 responses
 ```
 
 ## Magento Docs & Info Links
