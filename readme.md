@@ -1844,7 +1844,7 @@ Default Magento 2.2.2 theme has up to 168 HTTP requests of which 144 are Javascr
 
 ## Magento 2 Redis Benchmarks
 
-Redis server can be configured to default TCP mode or you can take advantage of using both TCP mode + Unix Socket modes so configure web apps that support Unix Socket to use that whike keaving web apps that only support TCP mode to use that.
+Redis server can be configured to default TCP mode or you can take advantage of using both TCP mode + Unix Socket modes so configure web apps that support Unix Socket to use that whike keaving web apps that only support TCP mode to use that. From my experience which Unix Sockets maybe faster, they don't scale in terms of higher concurrency load levels as TCP connections.
 
 Quick benchmarks are below of Redis caching TCP vs Unix Socket using my custom forked [wrk-cmm](https://github.com/centminmod/wrk/tree/centminmod) load testing tool. Pay particular attention to latency distribution at 99% percentile mark and requests/sec and thread stats for Time To First Byte (TTFB) differences. Below wrk-cmm tests were lightl testing with 2 threads and 2 concurrent users over 10 second duration and testing for gzip encoded compressed HTTP requests.
 
@@ -1963,6 +1963,12 @@ thread 2 made 345 requests and got 344 responses
 * http://devdocs.magento.com/guides/v2.2/install-gde/install/post-install-umask.html
 * http://devdocs.magento.com/guides/v2.2/config-guide/cli/config-cli-subcommands-static-view.html
 
+### magento caching
+
+* http://devdocs.magento.com/guides/v2.2/config-guide/redis/redis-pg-cache.html
+* https://github.com/colinmollenhour/Cm_Cache_Backend_Redis
+* https://github.com/colinmollenhour/magento-cache-benchmark
+
 ### magento search
 
 * https://github.com/Smile-SA/elasticsuite
@@ -2018,6 +2024,7 @@ thread 2 made 345 requests and got 344 responses
 * https://www.keycdn.com/blog/speed-up-magento/
 * https://community.magento.com/t5/Hosting-Performance/CSS-and-JS-loading-WAY-too-slow/m-p/61742#M235
 * http://blog.mageworx.com/2018/02/5-ways-to-improve-magento-2-mobile-speed/
+* https://servebolt.com/performance-magento-2-demo-store-new-york/
 
 ### magento profiler
 
