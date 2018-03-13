@@ -523,11 +523,12 @@ echo "SELECT engine, count(*) tables, concat(round(sum(table_rows))) rows, conca
 redisserver=127.0.0.1
 # lz4 or gzip
 compresstype=lz4
-php $WEBROOT/bin/magento setup:config:set --cache-backend=redis --cache-backend-redis-server=$redisserver --cache-backend-redis-db=12
+port=6379
+php $WEBROOT/bin/magento setup:config:set --cache-backend=redis --cache-backend-redis-server=$redisserver --cache-backend-redis-db=12 --cache-backend-redis-port=$port
 
-php $WEBROOT/bin/magento setup:config:set --page-cache=redis --page-cache-redis-server=$redisserver --page-cache-redis-db=13 --page-cache-redis-compress-data=$compresstype
+php $WEBROOT/bin/magento setup:config:set --page-cache=redis --page-cache-redis-server=$redisserver --page-cache-redis-db=13 --page-cache-redis-compress-data=$compresstype --page-cache-redis-port=$port
 
-php $WEBROOT/bin/magento setup:config:set --session-save=redis --session-save-redis-host=$redisserver --session-save-redis-log-level=3 --session-save-redis-db=14 --session-save-redis-compression-lib=$compresstype --session-save-redis-max-concurrency=4 --session-save-redis-first-lifetime=600 --session-save-redis-bot-first-lifetime=60 --session-save-redis-bot-lifetime=7200 --session-save-redis-min-lifetime=60 --session-save-redis-max-lifetime=2592000 --session-save-redis-break-after-frontend=60 --session-save-redis-break-after-adminhtml=60
+php $WEBROOT/bin/magento setup:config:set --session-save=redis --session-save-redis-host=$redisserver --session-save-redis-log-level=3 --session-save-redis-db=14 --session-save-redis-compression-lib=$compresstype --session-save-redis-max-concurrency=4 --session-save-redis-first-lifetime=600 --session-save-redis-bot-first-lifetime=60 --session-save-redis-bot-lifetime=7200 --session-save-redis-min-lifetime=60 --session-save-redis-max-lifetime=2592000 --session-save-redis-break-after-frontend=60 --session-save-redis-break-after-adminhtml=60 --session-save-redis-port=$port
 
 #n98-magerun2 config:set catalog/frontend/grid_per_page_values "12,24,36"
 #n98-magerun2 config:set catalog/frontend/grid_per_page "12"
@@ -1853,11 +1854,12 @@ Redis TCP Mode
 redisserver=127.0.0.1
 # lz4 or gzip
 compresstype=lz4
-php $WEBROOT/bin/magento setup:config:set --cache-backend=redis --cache-backend-redis-server=$redisserver --cache-backend-redis-db=12
+port=6379
+php $WEBROOT/bin/magento setup:config:set --cache-backend=redis --cache-backend-redis-server=$redisserver --cache-backend-redis-db=12 --cache-backend-redis-port=$port
 
-php $WEBROOT/bin/magento setup:config:set --page-cache=redis --page-cache-redis-server=$redisserver --page-cache-redis-db=13 --page-cache-redis-compress-data=$compresstype
+php $WEBROOT/bin/magento setup:config:set --page-cache=redis --page-cache-redis-server=$redisserver --page-cache-redis-db=13 --page-cache-redis-compress-data=$compresstype --page-cache-redis-port=$port
 
-php $WEBROOT/bin/magento setup:config:set --session-save=redis --session-save-redis-host=$redisserver --session-save-redis-log-level=3 --session-save-redis-db=14 --session-save-redis-compression-lib=$compresstype --session-save-redis-max-concurrency=4 --session-save-redis-first-lifetime=600 --session-save-redis-bot-first-lifetime=60 --session-save-redis-bot-lifetime=7200 --session-save-redis-min-lifetime=60 --session-save-redis-max-lifetime=2592000 --session-save-redis-break-after-frontend=60 --session-save-redis-break-after-adminhtml=60
+php $WEBROOT/bin/magento setup:config:set --session-save=redis --session-save-redis-host=$redisserver --session-save-redis-log-level=3 --session-save-redis-db=14 --session-save-redis-compression-lib=$compresstype --session-save-redis-max-concurrency=4 --session-save-redis-first-lifetime=600 --session-save-redis-bot-first-lifetime=60 --session-save-redis-bot-lifetime=7200 --session-save-redis-min-lifetime=60 --session-save-redis-max-lifetime=2592000 --session-save-redis-break-after-frontend=60 --session-save-redis-break-after-adminhtml=60 --session-save-redis-port=$port
 
 php $WEBROOT/bin/magento setup:static-content:deploy
 php $WEBROOT/bin/magento setup:di:compile
@@ -1897,11 +1899,12 @@ Redis Unix socket Mode
 redisserver=/var/run/redis/redis.sock
 # lz4 or gzip
 compresstype=lz4
-php $WEBROOT/bin/magento setup:config:set --cache-backend=redis --cache-backend-redis-server=$redisserver --cache-backend-redis-db=12
+port=0
+php $WEBROOT/bin/magento setup:config:set --cache-backend=redis --cache-backend-redis-server=$redisserver --cache-backend-redis-db=12 --cache-backend-redis-port=$port
 
-php $WEBROOT/bin/magento setup:config:set --page-cache=redis --page-cache-redis-server=$redisserver --page-cache-redis-db=13 --page-cache-redis-compress-data=$compresstype
+php $WEBROOT/bin/magento setup:config:set --page-cache=redis --page-cache-redis-server=$redisserver --page-cache-redis-db=13 --page-cache-redis-compress-data=$compresstype --page-cache-redis-port=$port
 
-php $WEBROOT/bin/magento setup:config:set --session-save=redis --session-save-redis-host=$redisserver --session-save-redis-log-level=3 --session-save-redis-db=14 --session-save-redis-compression-lib=$compresstype --session-save-redis-max-concurrency=4 --session-save-redis-first-lifetime=600 --session-save-redis-bot-first-lifetime=60 --session-save-redis-bot-lifetime=7200 --session-save-redis-min-lifetime=60 --session-save-redis-max-lifetime=2592000 --session-save-redis-break-after-frontend=60 --session-save-redis-break-after-adminhtml=60
+php $WEBROOT/bin/magento setup:config:set --session-save=redis --session-save-redis-host=$redisserver --session-save-redis-log-level=3 --session-save-redis-db=14 --session-save-redis-compression-lib=$compresstype --session-save-redis-max-concurrency=4 --session-save-redis-first-lifetime=600 --session-save-redis-bot-first-lifetime=60 --session-save-redis-bot-lifetime=7200 --session-save-redis-min-lifetime=60 --session-save-redis-max-lifetime=2592000 --session-save-redis-break-after-frontend=60 --session-save-redis-break-after-adminhtml=60 --session-save-redis-port=$port
 
 php $WEBROOT/bin/magento setup:static-content:deploy
 php $WEBROOT/bin/magento setup:di:compile
