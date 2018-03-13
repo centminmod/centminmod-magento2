@@ -7,6 +7,7 @@
 * [Magento 2.2.2 Installation](https://github.com/centminmod/centminmod-magento2#magento-222-installation)
 * [Magento 2 Page Speed Tests](https://github.com/centminmod/centminmod-magento2#magento-2-page-speed-tests)
 * [Magento 2 Redis Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-redis-benchmarks)
+  * [Magento 2 File Based Caching Benchmarks](https://github.com/centminmod/centminmod-magento2#benchmarks-with-redis-caching-disabled)
 * [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
 
 ## Introduction
