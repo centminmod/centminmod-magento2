@@ -9,10 +9,11 @@
 * [Magento 2 Redis Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-redis-benchmarks)
   * [Magento 2 File Based Caching Benchmarks](https://github.com/centminmod/centminmod-magento2#benchmarks-with-redis-caching-disabled)
 * [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
+* [Magento 2 Bugs](https://github.com/centminmod/centminmod-magento2#magento-2-bugs)
 
 ## Introduction
 
-This Magento 2.2.2 installation guide is written by George Liu (eva2000) and is **provided as is without any support** and was written specifically for Magento 2.2.2 installs on [Centmin Mod 123.09beta01](https://centminmod.com/) or higher branch LEMP stack installations running Nginx 1.13 branch with PHP-FPM 7.1.x latest (Magento 2.2.2 doesn't support PHP 7.2 yet) and MariaDB 10.1.31 MySQL server. Magento 2.2.2 install below will be via Composer download and native Magento binary command tool and is 100% pure SSH command line install. FTP/SFTP is not used at all. The below Magento install steps could be used to write an automated script to install Magento 2.2.2 on Centmin Mod LEMP stacks purely from SSH command line. Maybe something planned on offer to [Centmin Mod Premium Members](https://community.centminmod.com/premium/).
+This Magento 2.2.2 installation guide is written by George Liu (eva2000) and is **provided as is without any support** and was written specifically for Magento 2.2.2 installs on [Centmin Mod 123.09beta01](https://centminmod.com/) or higher branch LEMP stack installations running Nginx 1.13 branch with PHP-FPM 7.1.x latest (Magento 2.2.2 doesn't support PHP 7.2 yet) and MariaDB 10.1.31 MySQL server. Magento 2.2.2 install below will be via Composer download and native Magento binary command tool and is 100% pure SSH command line install. FTP/SFTP is not used at all. The below Magento install steps could be used to write an automated script to install Magento 2.2.2 on Centmin Mod LEMP stacks purely from SSH command line. Maybe something planned on offer to [Centmin Mod Premium Members](https://community.centminmod.com/premium/). Update: added a [Magento 2 Bugs](https://github.com/centminmod/centminmod-magento2#magento-2-bugs) of which one bug already affects Magento 2.2.2 causing high MySQL / PHP related loads.
 
 **Disclaimer:** 
 
@@ -1897,6 +1898,8 @@ Default Magento 2.2.2 theme has up to 168 HTTP requests of which 144 are Javascr
 
 ## Magento 2 Redis Benchmarks
 
+Update: added a [Magento 2 Bugs](https://github.com/centminmod/centminmod-magento2#magento-2-bugs) of which one bug already affects Magento 2.2.2 causing high MySQL / PHP related loads so may of affected benchmarks too.
+
 Redis server can be configured to default TCP mode or you can take advantage of using both TCP mode + Unix Socket modes so configure web apps that support Unix Socket to use that whike keaving web apps that only support TCP mode to use that. From my experience which Unix Sockets maybe faster, they don't scale in terms of higher concurrency load levels as TCP connections.
 
 Quick benchmarks are below of Redis caching TCP vs Unix Socket using my custom forked [wrk-cmm](https://github.com/centminmod/wrk/tree/centminmod) load testing tool. Pay particular attention to latency distribution at 99% percentile mark and requests/sec and thread stats for Time To First Byte (TTFB) differences. Below wrk-cmm tests were lightl testing with 2 threads and 2 concurrent users over 10 second duration and testing for gzip encoded compressed HTTP requests.
@@ -2424,3 +2427,7 @@ php $WEBROOT/bin/magento maintenance:status
 * https://marketplace.magento.com/innovo-module-cache-improve.html
 * https://amasty.com/magento-full-page-cache.html
 * https://github.com/AmastyLtd/improved-search
+
+## Magento 2 Bugs
+
+* https://github.com/magento/magento2/issues/11002
