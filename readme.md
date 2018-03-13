@@ -615,6 +615,29 @@ composer dump-autoload -o
 chown -R nginx:nginx "/home/nginx/domains/${vhostname}/public"
 ```
 
+Magento 2 logrotate configuration
+
+Configuring logrotate for Magento 2 by setting up a `/etc/logrotate.d/magento2` logrotate config file with following contents
+
+```
+/home/nginx/domains/magento.domain.com/public/var/log/*.log {
+  su root root
+  size 10M
+  missingok
+  rotate 50
+  compress
+  delaycompress
+  notifempty
+  dateext
+}
+```
+
+Manually test logrotate
+
+```
+logrotate -df /etc/logrotate.d/magento2
+```
+
 ### Step 4. Nginx Vhost 
 
 As per https://community.centminmod.com/threads/updated-magento-2-nginx-directives-for-magento-2-15.10975/ with adjusted modifications derived from the reading of other info links.
