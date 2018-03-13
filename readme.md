@@ -6,6 +6,7 @@
 * [Centmin Mod 123.09beta01 LEMP Stack Install](https://github.com/centminmod/centminmod-magento2#centmin-mod-12309beta01-lemp-stack-install)
 * [Magento 2.2.2 Installation](https://github.com/centminmod/centminmod-magento2#magento-222-installation)
 * [Magento 2 Page Speed Tests](https://github.com/centminmod/centminmod-magento2#magento-2-page-speed-tests)
+* [Magento 2 Redis Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-redis-benchmarks)
 * [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
 
 ## Introduction
@@ -92,6 +93,66 @@ git clone https://github.com/centminmod/centminmod-redis
 cd centminmod-redis
 if [ ! -f /usr/bin/redis-server ]; then ./redis-install.sh install; fi
 service redis restart
+```
+
+Modifying /etc/redis.conf config with
+
+```
+maxmemory 512mb
+maxmemory-policy allkeys-lru
+maxmemory-samples 10
+appendonly yes
+```
+
+If you are only using redis server for caching and not persistent storage in any web apps on server also comment out and disable snapshotting altogther
+
+```
+#save 900 1
+#save 300 10
+#save 60 10000
+```
+
+You can also remove the Redis TCP overhead in /etc/redis.conf by also enabling unix socket mode while keep TCP ports for Redis enabled too. Below setups up unixsocket at `/var/run/redis/redis.sock`
+
+```
+# Specify the path for the Unix socket that will be used to listen for
+# incoming connections. There is no default, so Redis will not listen
+# on a unix socket when not specified.
+#
+unixsocket /var/run/redis/redis.sock
+unixsocketperm 755
+```
+
+restart redis server
+
+```
+service redis restart
+```
+
+check redis server info via unixsocket
+
+```
+redis-cli -s /var/run/redis/redis.sock info server
+# Server
+redis_version:4.0.8
+redis_git_sha1:00000000
+redis_git_dirty:0
+redis_build_id:32fcc4a764b07c42
+redis_mode:standalone
+os:Linux 3.10.0-229.el7.x86_64 x86_64
+arch_bits:64
+multiplexing_api:epoll
+atomicvar_api:atomic-builtin
+gcc_version:4.8.5
+process_id:1618
+run_id:21de92709a7ed5f299425ddeb1bf0dd5a7399331
+tcp_port:6379
+uptime_in_seconds:139
+uptime_in_days:0
+hz:10
+lru_clock:10971220
+executable:/usr/bin/redis-server
+config_file:/etc/redis.conf
 ```
 
 #### lz4 compression
@@ -457,6 +518,8 @@ CONCAT(ROUND(index_length/(1024*1024),2),'MB') AS 'Index Size' ,CONCAT(ROUND((da
 echo "SELECT engine, count(*) tables, concat(round(sum(table_rows))) rows, concat(round(sum(data_length)/(1024*1024),2),'MB') data, concat(round(sum(index_length)/(1024*1024),2),'MB') idx, concat(round(sum(data_length+index_length)/(1024*1024),2),'MB') total_size, round(sum(index_length)/sum(data_length),2) idxfrac FROM information_schema.TABLES WHERE table_schema LIKE '$DBNAME' GROUP BY engine ORDER BY sum(data_length+index_length) DESC LIMIT 10;" | mysql -t
 
 # setup default, full page and session based redis caching in redis databases 12, 13 and 14 respectively instead of default
+# if using redis unix socket set to 
+# redisserver='/var/run/redis/redis.sock'
 redisserver=127.0.0.1
 # lz4 or gzip
 compresstype=lz4
@@ -1220,6 +1283,373 @@ n98-magerun2 db:variables --skip-root-check
 +---------------------------------+--------+
 ```
 
+Show Magento 2 database tables
+
+```
+n98-magerun2 db:query "show tables;" --skip-root-check   
+Tables_in_magento24MUU
+mags_admin_passwords
+mags_admin_system_messages
+mags_admin_user
+mags_admin_user_session
+mags_adminnotification_inbox
+mags_authorization_role
+mags_authorization_rule
+mags_cache
+mags_cache_tag
+mags_captcha_log
+mags_catalog_category_entity
+mags_catalog_category_entity_datetime
+mags_catalog_category_entity_decimal
+mags_catalog_category_entity_int
+mags_catalog_category_entity_text
+mags_catalog_category_entity_varchar
+mags_catalog_category_flat_cl
+mags_catalog_category_flat_store_1
+mags_catalog_category_product
+mags_catalog_category_product_cl
+mags_catalog_category_product_index
+mags_catalog_category_product_index_replica
+mags_catalog_category_product_index_tmp
+mags_catalog_compare_item
+mags_catalog_eav_attribute
+mags_catalog_product_attribute_cl
+mags_catalog_product_bundle_option
+mags_catalog_product_bundle_option_value
+mags_catalog_product_bundle_price_index
+mags_catalog_product_bundle_selection
+mags_catalog_product_bundle_selection_price
+mags_catalog_product_bundle_stock_index
+mags_catalog_product_category_cl
+mags_catalog_product_entity
+mags_catalog_product_entity_datetime
+mags_catalog_product_entity_decimal
+mags_catalog_product_entity_gallery
+mags_catalog_product_entity_int
+mags_catalog_product_entity_media_gallery
+mags_catalog_product_entity_media_gallery_value
+mags_catalog_product_entity_media_gallery_value_to_entity
+mags_catalog_product_entity_media_gallery_value_video
+mags_catalog_product_entity_text
+mags_catalog_product_entity_tier_price
+mags_catalog_product_entity_varchar
+mags_catalog_product_flat_1
+mags_catalog_product_flat_cl
+mags_catalog_product_frontend_action
+mags_catalog_product_index_eav
+mags_catalog_product_index_eav_decimal
+mags_catalog_product_index_eav_decimal_idx
+mags_catalog_product_index_eav_decimal_replica
+mags_catalog_product_index_eav_decimal_tmp
+mags_catalog_product_index_eav_idx
+mags_catalog_product_index_eav_replica
+mags_catalog_product_index_eav_tmp
+mags_catalog_product_index_price
+mags_catalog_product_index_price_bundle_idx
+mags_catalog_product_index_price_bundle_opt_idx
+mags_catalog_product_index_price_bundle_opt_tmp
+mags_catalog_product_index_price_bundle_sel_idx
+mags_catalog_product_index_price_bundle_sel_tmp
+mags_catalog_product_index_price_bundle_tmp
+mags_catalog_product_index_price_cfg_opt_agr_idx
+mags_catalog_product_index_price_cfg_opt_agr_tmp
+mags_catalog_product_index_price_cfg_opt_idx
+mags_catalog_product_index_price_cfg_opt_tmp
+mags_catalog_product_index_price_downlod_idx
+mags_catalog_product_index_price_downlod_tmp
+mags_catalog_product_index_price_final_idx
+mags_catalog_product_index_price_final_tmp
+mags_catalog_product_index_price_idx
+mags_catalog_product_index_price_opt_agr_idx
+mags_catalog_product_index_price_opt_agr_tmp
+mags_catalog_product_index_price_opt_idx
+mags_catalog_product_index_price_opt_tmp
+mags_catalog_product_index_price_replica
+mags_catalog_product_index_price_tmp
+mags_catalog_product_index_tier_price
+mags_catalog_product_index_website
+mags_catalog_product_link
+mags_catalog_product_link_attribute
+mags_catalog_product_link_attribute_decimal
+mags_catalog_product_link_attribute_int
+mags_catalog_product_link_attribute_varchar
+mags_catalog_product_link_type
+mags_catalog_product_option
+mags_catalog_product_option_price
+mags_catalog_product_option_title
+mags_catalog_product_option_type_price
+mags_catalog_product_option_type_title
+mags_catalog_product_option_type_value
+mags_catalog_product_price_cl
+mags_catalog_product_relation
+mags_catalog_product_super_attribute
+mags_catalog_product_super_attribute_label
+mags_catalog_product_super_link
+mags_catalog_product_website
+mags_catalog_url_rewrite_product_category
+mags_cataloginventory_stock
+mags_cataloginventory_stock_cl
+mags_cataloginventory_stock_item
+mags_cataloginventory_stock_status
+mags_cataloginventory_stock_status_idx
+mags_cataloginventory_stock_status_replica
+mags_cataloginventory_stock_status_tmp
+mags_catalogrule
+mags_catalogrule_customer_group
+mags_catalogrule_group_website
+mags_catalogrule_group_website_replica
+mags_catalogrule_product
+mags_catalogrule_product_cl
+mags_catalogrule_product_price
+mags_catalogrule_product_price_replica
+mags_catalogrule_product_replica
+mags_catalogrule_rule_cl
+mags_catalogrule_website
+mags_catalogsearch_fulltext_cl
+mags_catalogsearch_fulltext_scope1
+mags_checkout_agreement
+mags_checkout_agreement_store
+mags_cms_block
+mags_cms_block_store
+mags_cms_page
+mags_cms_page_store
+mags_core_config_data
+mags_cron_schedule
+mags_customer_address_entity
+mags_customer_address_entity_datetime
+mags_customer_address_entity_decimal
+mags_customer_address_entity_int
+mags_customer_address_entity_text
+mags_customer_address_entity_varchar
+mags_customer_dummy_cl
+mags_customer_eav_attribute
+mags_customer_eav_attribute_website
+mags_customer_entity
+mags_customer_entity_datetime
+mags_customer_entity_decimal
+mags_customer_entity_int
+mags_customer_entity_text
+mags_customer_entity_varchar
+mags_customer_form_attribute
+mags_customer_grid_flat
+mags_customer_group
+mags_customer_log
+mags_customer_visitor
+mags_design_change
+mags_design_config_dummy_cl
+mags_design_config_grid_flat
+mags_directory_country
+mags_directory_country_format
+mags_directory_country_region
+mags_directory_country_region_name
+mags_directory_currency_rate
+mags_downloadable_link
+mags_downloadable_link_price
+mags_downloadable_link_purchased
+mags_downloadable_link_purchased_item
+mags_downloadable_link_title
+mags_downloadable_sample
+mags_downloadable_sample_title
+mags_eav_attribute
+mags_eav_attribute_group
+mags_eav_attribute_label
+mags_eav_attribute_option
+mags_eav_attribute_option_swatch
+mags_eav_attribute_option_value
+mags_eav_attribute_set
+mags_eav_entity
+mags_eav_entity_attribute
+mags_eav_entity_datetime
+mags_eav_entity_decimal
+mags_eav_entity_int
+mags_eav_entity_store
+mags_eav_entity_text
+mags_eav_entity_type
+mags_eav_entity_varchar
+mags_eav_form_element
+mags_eav_form_fieldset
+mags_eav_form_fieldset_label
+mags_eav_form_type
+mags_eav_form_type_entity
+mags_email_automation
+mags_email_campaign
+mags_email_catalog
+mags_email_contact
+mags_email_importer
+mags_email_order
+mags_email_review
+mags_email_rules
+mags_email_template
+mags_email_wishlist
+mags_flag
+mags_gift_message
+mags_googleoptimizer_code
+mags_import_history
+mags_importexport_importdata
+mags_indexer_state
+mags_integration
+mags_layout_link
+mags_layout_update
+mags_mview_state
+mags_newsletter_problem
+mags_newsletter_queue
+mags_newsletter_queue_link
+mags_newsletter_queue_store_link
+mags_newsletter_subscriber
+mags_newsletter_template
+mags_oauth_consumer
+mags_oauth_nonce
+mags_oauth_token
+mags_oauth_token_request_log
+mags_password_reset_request_event
+mags_paypal_billing_agreement
+mags_paypal_billing_agreement_order
+mags_paypal_cert
+mags_paypal_payment_transaction
+mags_paypal_settlement_report
+mags_paypal_settlement_report_row
+mags_persistent_session
+mags_product_alert_price
+mags_product_alert_stock
+mags_quote
+mags_quote_address
+mags_quote_address_item
+mags_quote_id_mask
+mags_quote_item
+mags_quote_item_option
+mags_quote_payment
+mags_quote_shipping_rate
+mags_rating
+mags_rating_entity
+mags_rating_option
+mags_rating_option_vote
+mags_rating_option_vote_aggregated
+mags_rating_store
+mags_rating_title
+mags_release_notification_viewer_log
+mags_report_compared_product_index
+mags_report_event
+mags_report_event_types
+mags_report_viewed_product_aggregated_daily
+mags_report_viewed_product_aggregated_monthly
+mags_report_viewed_product_aggregated_yearly
+mags_report_viewed_product_index
+mags_reporting_counts
+mags_reporting_module_status
+mags_reporting_orders
+mags_reporting_system_updates
+mags_reporting_users
+mags_review
+mags_review_detail
+mags_review_entity
+mags_review_entity_summary
+mags_review_status
+mags_review_store
+mags_sales_bestsellers_aggregated_daily
+mags_sales_bestsellers_aggregated_monthly
+mags_sales_bestsellers_aggregated_yearly
+mags_sales_creditmemo
+mags_sales_creditmemo_comment
+mags_sales_creditmemo_grid
+mags_sales_creditmemo_item
+mags_sales_invoice
+mags_sales_invoice_comment
+mags_sales_invoice_grid
+mags_sales_invoice_item
+mags_sales_invoiced_aggregated
+mags_sales_invoiced_aggregated_order
+mags_sales_order
+mags_sales_order_address
+mags_sales_order_aggregated_created
+mags_sales_order_aggregated_updated
+mags_sales_order_grid
+mags_sales_order_item
+mags_sales_order_payment
+mags_sales_order_status
+mags_sales_order_status_history
+mags_sales_order_status_label
+mags_sales_order_status_state
+mags_sales_order_tax
+mags_sales_order_tax_item
+mags_sales_payment_transaction
+mags_sales_refunded_aggregated
+mags_sales_refunded_aggregated_order
+mags_sales_sequence_meta
+mags_sales_sequence_profile
+mags_sales_shipment
+mags_sales_shipment_comment
+mags_sales_shipment_grid
+mags_sales_shipment_item
+mags_sales_shipment_track
+mags_sales_shipping_aggregated
+mags_sales_shipping_aggregated_order
+mags_salesrule
+mags_salesrule_coupon
+mags_salesrule_coupon_aggregated
+mags_salesrule_coupon_aggregated_order
+mags_salesrule_coupon_aggregated_updated
+mags_salesrule_coupon_usage
+mags_salesrule_customer
+mags_salesrule_customer_group
+mags_salesrule_label
+mags_salesrule_product_attribute
+mags_salesrule_website
+mags_search_query
+mags_search_synonyms
+mags_sendfriend_log
+mags_sequence_creditmemo_0
+mags_sequence_creditmemo_1
+mags_sequence_invoice_0
+mags_sequence_invoice_1
+mags_sequence_order_0
+mags_sequence_order_1
+mags_sequence_shipment_0
+mags_sequence_shipment_1
+mags_session
+mags_setup_module
+mags_shipping_tablerate
+mags_signifyd_case
+mags_sitemap
+mags_store
+mags_store_group
+mags_store_website
+mags_tax_calculation
+mags_tax_calculation_rate
+mags_tax_calculation_rate_title
+mags_tax_calculation_rule
+mags_tax_class
+mags_tax_order_aggregated_created
+mags_tax_order_aggregated_updated
+mags_temando_checkout_address
+mags_temando_order
+mags_temando_shipment
+mags_theme
+mags_theme_file
+mags_translation
+mags_ui_bookmark
+mags_url_rewrite
+mags_variable
+mags_variable_value
+mags_vault_payment_token
+mags_vault_payment_token_order_payment_link
+mags_weee_tax
+mags_widget
+mags_widget_instance
+mags_widget_instance_page
+mags_widget_instance_page_layout
+mags_wishlist
+mags_wishlist_item
+mags_wishlist_item_option
+```
+
+Verifying cache and cache_tag database tables contents with above defaulted database prefix = `mags_ ` when SSH session variable `DBPREFIX='mags_'` was set
+
+```
+n98-magerun2 db:query "SELECT * from mags_cache limit 0,10;" --skip-root-check
+
+n98-magerun2 db:query "SELECT * from mags_cache_tag limit 0,10;" --skip-root-check
+```
+
 Magento 2 database engine breakdown stats
 
 ```
@@ -1411,6 +1841,66 @@ Default Magento 2.2.2 theme has up to 168 HTTP requests of which 144 are Javascr
 
 ![](/screenshots/wpt-magento-222-centminmod-nginx-default-theme-cable-dulles-04.png)
 
+## Magento 2 Redis Benchmarks
+
+Redis server can be configured to default TCP mode or you can take advantage of using both TCP mode + Unix Socket modes so configure web apps that support Unix Socket to use that whike keaving web apps that only support TCP mode to use that.
+
+Quick benchmarks are below of Redis caching TCP vs Unix Socket using my custom forked [wrk-cmm](https://github.com/centminmod/wrk/tree/centminmod) load testing tool. Pay particular attention to latency distribution at 99% percentile mark and requests/sec and thread stats for Time To First Byte (TTFB) differences. Below wrk-cmm tests were lightl testing with 2 threads and 2 concurrent users over 10 second duration and testing for gzip encoded compressed HTTP requests.
+
+Redis TCP Mode with 99% percentile latency times = 49.54ms and 82.38 requests/s and thread TTFB Avg = 356.80us
+
+```
+domain=https://magento.domain.com
+wrk-cmm -t2 -c2 -d10s --breakout -H 'Accept-Encoding: gzip' -s scripts/setup.lua --latency $domain 
+thread 1 created
+thread 2 created
+Running 10s test @ https://magento.domain.com
+  2 threads and 2 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    24.56ms    7.78ms 122.37ms   95.82%
+    Connect     8.71ms  755.90us   9.24ms  100.00%
+    TTFB       24.20ms    7.75ms 121.37ms   95.69%
+    TTLB      356.80us  361.60us   3.46ms   97.58%
+    Req/Sec    41.52      6.60    50.00     63.64%
+  Latency Distribution
+     50%   23.10ms
+     75%   25.52ms
+     90%   29.10ms
+     99%   49.54ms
+  828 requests in 10.05s, 5.86MB read
+Requests/sec:     82.38
+Transfer/sec:    597.11KB
+thread 1 made 416 requests and got 414 responses
+thread 2 made 415 requests and got 414 responses
+```
+
+Redis Unix socket Mode with 99% percentile latency times = 20.84ms and 361.34 requests/s and thread TTFB Avg = 40.84us
+
+```
+domain=https://magento.domain.com
+wrk-cmm -t2 -c2 -d10s --breakout -H 'Accept-Encoding: gzip' -s scripts/setup.lua --latency $domain
+thread 1 created
+thread 2 created
+Running 10s test @ https://magento.domain.com
+  2 threads and 2 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.87ms    4.72ms  86.26ms   97.82%
+    Connect     2.24ms    2.39ms   6.05ms   75.00%
+    TTFB        5.82ms    4.69ms  85.82ms   97.81%
+    TTLB       40.84us   30.52us 361.00us   89.16%
+    Req/Sec   181.51     27.95   232.00     83.00%
+  Latency Distribution
+     50%    5.25ms
+     75%    5.75ms
+     90%    6.55ms
+     99%   20.84ms
+  3635 requests in 10.06s, 1.44MB read
+  Non-2xx or 3xx responses: 3635
+Requests/sec:    361.34
+Transfer/sec:    146.79KB
+thread 1 made 1815 requests and got 1813 responses
+thread 2 made 1823 requests and got 1822 responses
+```
 
 ## Magento Docs & Info Links
 
@@ -1526,3 +2016,4 @@ php $WEBROOT/bin/magento maintenance:status
 ### Magento 2 Extensions
 
 * https://www.weltpixel.com/magento-2-lazy-loading-enhanced.html
+* https://marketplace.magento.com/innovo-module-cache-improve.html
