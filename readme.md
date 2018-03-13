@@ -58,6 +58,35 @@ Magento 2.2.2 install is done purely via SSH command line and the test KVM VPS s
  - MariaDB 10.1.31 MySQL Server
  - CSF Firewall
 
+The cpu is very old as it doesn't have SSE4.2 which was added back in [Intel Nehalem](https://en.wikipedia.org/wiki/SSE4#SSE4.2) architecture back in 2008 - making this cpu at least 10+ yrs old.
+
+```
+lscpu
+Architecture:          x86_64
+CPU op-mode(s):        32-bit, 64-bit
+Byte Order:            Little Endian
+CPU(s):                4
+On-line CPU(s) list:   0-3
+Thread(s) per core:    1
+Core(s) per socket:    1
+Socket(s):             4
+NUMA node(s):          1
+Vendor ID:             GenuineIntel
+CPU family:            6
+Model:                 13
+Model name:            QEMU Virtual CPU version 1.5.3
+Stepping:              3
+CPU MHz:               2499.998
+BogoMIPS:              4999.99
+Hypervisor vendor:     KVM
+Virtualization type:   full
+L1d cache:             32K
+L1i cache:             32K
+L2 cache:              4096K
+NUMA node0 CPU(s):     0-3
+Flags:                 fpu de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pse36 clflush mmx fxsr sse sse2 syscall nx lm rep_good nopl pni cx16 hypervisor lahf_lm
+```
+
 ### Step 1. Get Magento Authentication Keys
 
 To install Magento via Composer, you need to register an account to get the Authentication Keys from [Magento Markplace](https://marketplace.magento.com/) and log in and go to Account Profile, Market Place tab and Access Keys to generate a set of Authentictaion Keys. In step 2 next, you will use the public key to assign to SSH variable `magentouser_key`and private key to assign to SSH variable `magentouser_pass`.
