@@ -1898,7 +1898,12 @@ Default Magento 2.2.2 theme has up to 168 HTTP requests of which 144 are Javascr
 
 ## Magento 2 Redis Benchmarks
 
-Update: added a [Magento 2 Bugs](https://github.com/centminmod/centminmod-magento2#magento-2-bugs) of which one bug already affects Magento 2.2.2 causing high MySQL / PHP related loads so may of affected benchmarks too.
+Update: added a [Magento 2 Bugs](https://github.com/centminmod/centminmod-magento2#magento-2-bugs) of which one bug already affects Magento 2.2.2 causing high MySQL / PHP related loads so may of affected benchmarks too. I have 97 pending cron sheduled jobs.
+
+```
+n98-magerun2 db:query "SELECT * FROM mags_cron_schedule WHERE status='pending';" --skip-root-check | wc -l
+97
+```
 
 Redis server can be configured to default TCP mode or you can take advantage of using both TCP mode + Unix Socket modes so configure web apps that support Unix Socket to use that whike keaving web apps that only support TCP mode to use that. From my experience which Unix Sockets maybe faster, they don't scale in terms of higher concurrency load levels as TCP connections.
 
