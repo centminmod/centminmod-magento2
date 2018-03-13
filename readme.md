@@ -247,7 +247,7 @@ php --ri "Zend Opcache"
 php --ri session
 ```
 
-check memory_limit
+check memory_limit which shows local and global values
 
 ```
 php -i | grep memory_limit
