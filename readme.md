@@ -2893,7 +2893,6 @@ map $request_uri $mag_nocacheuri {
     ~^/signup/              1;
     ~^/join/                1;
     ~^/two-step             1;
-    ~^/two-step             1;
 }
 
 map $http_user_agent $mag_mobiledevices {
