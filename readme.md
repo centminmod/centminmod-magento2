@@ -8,6 +8,7 @@
 * [Magento 2 Page Speed Tests](https://github.com/centminmod/centminmod-magento2#magento-2-page-speed-tests)
 * [Magento 2 Redis Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-redis-benchmarks)
   * [Magento 2 File Based Caching Benchmarks](https://github.com/centminmod/centminmod-magento2#benchmarks-with-redis-caching-disabled)
+* [Magento 2 Varnish Cache Config & Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-varnish-cache)
 * [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
 * [Magento 2 Bugs](https://github.com/centminmod/centminmod-magento2#magento-2-bugs)
 
@@ -2307,6 +2308,1286 @@ diff -u app/etc/env.php.redisset app/etc/env.php
      'default' => 
 ```
 
+## Magento 2 Varnish Cache
+
+Magento folks recommend that Varnish Cache be used for full paege caching instead of Redis full page caching as outlined at [Varnish Cache based full page caching](http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish.html). We'll need to configure Varnish Cache 5.2.x with HTTP/2 support proxying to a non-HTTPS `magento.domain.com` backend. For terminating HTTPS connections using Centmin Mod Nginx HTTP/2 HTTPS as reverse proxy in front of Varnish Cache as Varnish Cache can't fully handle HTTPS itself. The work flow looks like this:
+
+```
+Visitor > Nginx HTTP/2 HTTPS Proxy > Varnish Cache HTTP/2 Enabled > Nginx non-HTTPS backend
+```
+
+### Step 1. Installing Varnish Cache on Centmin Mod LEMP Stack
+
+Centmin Mod 123.09beta01 branch automatically adds the official Varnish Cache 4.1 branch YUM repo. So this needs to be disabled first.
+
+```
+yum-config-manager --disable varnishcache_varnish41 varnishcache_varnish41-source
+```
+
+Then Varnish Cache 5 YUM repository needs to be installed and setup as per outlined instructions [here](https://packagecloud.io/varnishcache/varnish5/install#bash-rpm).
+
+```
+curl -s https://packagecloud.io/install/repositories/varnishcache/varnish5/script.rpm.sh | sudo bash
+```
+
+List the Varnish Cache YUM package
+
+```
+yum list varnish --disablerepo=epel
+
+Loaded plugins: fastestmirror, priorities, versionlock
+Loading mirror speeds from cached hostfile
+ * base: mirror.nodesdirect.com
+ * extras: www.gtlib.gatech.edu
+ * rpmforge: mirror.us.leaseweb.net
+ * updates: mirror.trouble-free.net
+27 packages excluded due to repository priority protections
+Available Packages
+varnish.x86_64        5.2.1-1.el7      varnishcache_varnish5
+```
+
+Install and setup Varnish Cache with HTTP/2 support enabled so it can read HTTP/2 in clear plain text with Varnish Cache listening off default 6081 port and setup Varnish backend port on Nginx non-HTTPS backend port 8686 which will be setup further below. I will be using Magento 2.2.2 exported Varnish default.vcl config file with slight modifications ([here](https://github.com/centminmod/centminmod-magento2/raw/master/vcl/varnish5/varnish-custom.vcl)) which I usually make to my Varnish Cache setups i.e. support Brotli compression when detected etc.
+
+```
+yum -y install varnish --disablerepo=epel
+mkdir -p /etc/systemd/system/varnish.service.d
+echo -en "[Service]\nLimitNOFILE=262144\nLimitSTACK=262144\n" > /etc/systemd/system/varnish.service.d/limit.conf
+\cp -af /etc/varnish/varnish.params /etc/varnish/varnish.params.orig
+\cp -af /etc/varnish/default.vcl /etc/varnish/default.vcl.orig
+wget -O /etc/varnish/default.vcl https://github.com/centminmod/centminmod-magento2/raw/master/vcl/varnish5/varnish-custom.vcl
+sed -i 's|port = "8080";|port = "8686";|' /etc/varnish/default.vcl
+sed -i 's|/pub/health_check.php|/health_check.php|' /etc/varnish/default.vcl
+sed -i '/DAEMON_OPTS/d' /etc/varnish/varnish.params
+echo "DAEMON_OPTS=\"-p feature=+http2 -p thread_pools=2 -p thread_pool_add_delay=0.02 -p listen_depth=4096 -p lru_interval=2 -p cli_timeout=10 -p thread_pool_min=500 -p thread_pool_max=1500 -p thread_pool_timeout=300 -p tcp_fastopen=on -p http_resp_hdr_len=48000\"" >> /etc/varnish/varnish.params
+cat /etc/systemd/system/varnish.service.d/limit.conf
+cat /etc/varnish/varnish.params
+systemctl daemon-reload
+systemctl start varnish
+systemctl status varnish
+journalctl -u varnish --no-pager
+```
+
+```
+varnishd -V
+varnishd (varnish-5.2.1 revision 67e562482)
+Copyright (c) 2006 Verdens Gang AS
+Copyright (c) 2006-2015 Varnish Software AS
+```
+
+Below setup assumes we have configured Varnish Cache 5.x listening on port 6081 default using the Magento geenerated and exported Varnish 5 default.vcl. Which will eventually communicate with backend port for Nginx created vhost file `magento.domain.com.backend.conf` on port 8686 and defined in `/usr/local/nginx/conf/proxycache_map.conf` upstream.
+
+
+within /etc/varnish/default.vcl 
+
+```
+backend default {
+    .host = "localhost";
+    .port = "8686";
+```
+
+### Step 2. Magento side adjustments
+
+```
+vhostname=magento.domain.com
+WEBROOT="/home/nginx/domains/${vhostname}/public"
+php $WEBROOT/bin/magento setup:store-config:set --base-url="http://${vhostname}/"
+php $WEBROOT/bin/magento setup:store-config:set --base-url-secure="https://${vhostname}/"
+php $WEBROOT/bin/magento cache:flush
+```
+
+check settings
+
+```
+n98-magerun2 sys:store:config:base-url:list --skip-root-check
+
+                              
+  Magento Stores - Base URLs  
+                              
+
++----+---------+----------------------------+-----------------------------+
+| id | code    | unsecure_baseurl           | secure_baseurl              |
++----+---------+----------------------------+-----------------------------+
+| 1  | default | http://magento.domain.com/ | https://magento.domain.com/ |
++----+---------+----------------------------+-----------------------------+
+```
+
+```
+php $WEBROOT/bin/magento config:show
+web/seo/use_rewrites - 1
+web/unsecure/base_url - http://magento.domain.com/
+web/secure/base_url - https://magento.domain.com/
+web/secure/use_in_adminhtml - 1
+web/secure/use_in_frontend - 1
+general/locale/code - en_US
+general/locale/timezone - America/Chicago
+general/region/display_all - 1
+general/region/state_required - AT,BR,CA,CH,EE,ES,FI,HR,LT,LV,RO,US
+currency/options/base - USD
+currency/options/default - USD
+currency/options/allow - USD
+catalog/category/root_id - 2
+catalog/frontend/flat_catalog_category - 1
+catalog/frontend/flat_catalog_product - 1
+analytics/subscription/enabled - 1
+analytics/general/token - kE4qU4IDX5qXxDRCbtmZSu_mC1m0dGW011J1wMlAIfuCAz_jkWROOWuzB6_Cqd3lDHqYHP-0OU8CywoI3tWozA
+system/full_page_cache/caching_application - 1
+system/full_page_cache/ttl - 86400
+system/full_page_cache/varnish/access_list - localhost
+system/full_page_cache/varnish/backend_host - localhost
+system/full_page_cache/varnish/backend_port - 8080
+system/full_page_cache/varnish/grace_period - 300
+dev/grid/async_indexing - 1
+dev/js/merge_files - 1
+dev/css/merge_css_files - 1
+dev/debug/debug_logging - 0
+sales_email/general/async_sending - 1
+```
+
+### Step 3. Create the Nginx non-HTTPS backend
+
+This can be done by using the previously disabled Nginx vhost file `magento.domain.com.conf.disabled` and making a backend copy to edit
+
+```
+cd /usr/local/nginx/conf/conf.d
+cp -a magento.domain.com.conf.disabled magento.domain.com.backend.conf
+```
+
+Modifying the vhost file to replicate the Magento rules and use a custom backend port 8686 which Varnish Cache will proxy and editing custom access_log and error_log paths. 
+
+Also need to adjust `$scheme` to `https`
+
+```
+add_header Link "<$scheme://$http_host$request_uri>; rel=\"canonical\"" always;
+```
+
+```
+add_header Link "<https://$http_host$request_uri>; rel=\"canonical\"" always;
+```
+
+fully adjusted `/usr/local/nginx/conf/conf.d/magento.domain.com.backend.conf` contents below:
+
+```
+server {
+  listen 8686 backlog=2048 reuseport;
+  server_name magento.domain.com;
+
+# ngx_pagespeed & ngx_pagespeed handler
+#include /usr/local/nginx/conf/pagespeed.conf;
+#include /usr/local/nginx/conf/pagespeedhandler.conf;
+#include /usr/local/nginx/conf/pagespeedstatslog.conf;
+
+  #add_header X-Frame-Options SAMEORIGIN;
+  #add_header X-Xss-Protection "1; mode=block" always;
+  #add_header X-Content-Type-Options "nosniff" always;
+  #add_header Referrer-Policy "strict-origin-when-cross-origin";
+
+  # limit_conn limit_per_ip 16;
+  # ssi  on;
+
+  access_log /home/nginx/domains/magento.domain.com/log/access.backend.log combined buffer=256k flush=5m;
+  error_log /home/nginx/domains/magento.domain.com/log/error.backend.log;
+
+  #include /usr/local/nginx/conf/autoprotect/magento.domain.com/autoprotect-magento.domain.com.conf;
+set $MAGE_ROOT /home/nginx/domains/magento.domain.com/public;
+root $MAGE_ROOT/pub;
+include /usr/local/nginx/conf/503include-main.conf;
+
+index index.php;
+autoindex off;
+charset UTF-8;
+error_page 404 403 = /errors/404.php;
+#add_header "X-UA-Compatible" "IE=Edge";
+
+# PHP entry point for setup application
+location ~* ^/setup($|/) {
+    root $MAGE_ROOT;
+    location ~ ^/setup/index.php {
+        include /usr/local/nginx/conf/php.conf;
+    }
+
+    location ~ ^/setup/(?!pub/). {
+        deny all;
+    }
+
+    location ~ ^/setup/pub/ {
+        add_header X-Frame-Options "SAMEORIGIN";
+    }
+}
+
+# PHP entry point for update application
+location ~* ^/update($|/) {
+    root $MAGE_ROOT;
+
+    location ~ ^/update/index.php {
+        fastcgi_split_path_info ^(/update/index.php)(/.+)$;
+        include /usr/local/nginx/conf/php_magento.conf;
+    }
+
+    # Deny everything but index.php
+    location ~ ^/update/(?!pub/). {
+        deny all;
+    }
+
+    location ~ ^/update/pub/ {
+        add_header X-Frame-Options "SAMEORIGIN";
+    }
+}
+
+location / {
+    include /usr/local/nginx/conf/503include-only.conf;
+    try_files $uri $uri/ /index.php$is_args$args;
+}
+
+location /pub/ {
+    location ~ ^/pub/media/(downloadable|customer|import|theme_customization/.*\.xml) {
+        deny all;
+    }
+    alias $MAGE_ROOT/pub/;
+    add_header X-Frame-Options "SAMEORIGIN";
+}
+
+location /static/ {
+    # Uncomment the following line in production mode
+    expires max;
+
+    # Remove signature of the static files that is used to overcome the browser cache
+    location ~ ^/static/version {
+        rewrite ^/static/(version\d*/)?(.*)$ /static/$2 last;
+    }
+    location ~* \.(ico|jpg|jpeg|png|gif|svg|js|css)$ {
+        add_header Cache-Control "public";
+        add_header Access-Control-Allow-Origin *;
+        add_header X-Frame-Options "SAMEORIGIN";
+        expires 30d;
+
+        if (!-f $request_filename) {
+            rewrite ^/static/?(.*)$ /static.php?resource=$1 last;
+        }
+    }
+    location ~* \.(swf|eot|ttf|otf|woff|woff2)$ {
+        add_header Cache-Control "public";
+        add_header Access-Control-Allow-Origin *;
+        add_header X-Frame-Options "SAMEORIGIN";
+        expires +1y;
+
+        if (!-f $request_filename) {
+            rewrite ^/static/?(.*)$ /static.php?resource=$1 last;
+        }
+    }
+    location ~* \.(zip|gz|gzip|bz2|csv|xml)$ {
+        add_header Cache-Control "no-store";
+        add_header X-Frame-Options "SAMEORIGIN";
+        expires    off;
+
+        if (!-f $request_filename) {
+           rewrite ^/static/?(.*)$ /static.php?resource=$1 last;
+        }
+    }
+    if (!-f $request_filename) {
+        rewrite ^/static/?(.*)$ /static.php?resource=$1 last;
+    }
+    add_header X-Frame-Options "SAMEORIGIN";
+}
+
+location /media/ {
+    try_files $uri $uri/ /get.php$is_args$args;
+
+    location ~ ^/media/theme_customization/.*\.xml {
+        deny all;
+    }
+    location ~* \.(ico|jpg|jpeg|png|gif|svg|js|css)$ {
+        add_header Cache-Control "public";
+        add_header Access-Control-Allow-Origin *;
+        add_header X-Frame-Options "SAMEORIGIN";
+        expires 30d;
+        try_files $uri $uri/ /get.php$is_args$args;
+    }
+    location ~* \.(swf|eot|ttf|otf|woff|woff2)$ {
+        add_header Cache-Control "public";
+        add_header Access-Control-Allow-Origin *;
+        add_header X-Frame-Options "SAMEORIGIN";
+        expires +1y;
+        try_files $uri $uri/ /get.php$is_args$args;
+    }
+    location ~* \.(zip|gz|gzip|bz2|csv|xml)$ {
+        add_header Cache-Control "no-store";
+        add_header X-Frame-Options "SAMEORIGIN";
+        expires    off;
+        try_files $uri $uri/ /get.php$is_args$args;
+    }
+    add_header X-Frame-Options "SAMEORIGIN";
+}
+
+location /media/customer/ {
+    deny all;
+}
+
+location /media/downloadable/ {
+    deny all;
+}
+
+location /media/import/ {
+    deny all;
+}
+
+# Deny cron and files with the obvious names. favorite entry points for hackers and script kiddie
+location ~* ^/(cron|phpminiadmin|pma|sqlyog|adminer.+)\.php { deny all; }
+
+# Deny auth and composer
+location ~ (auth|package|composer)\.(json|lock)$ { deny all; }
+
+# PHP entry point for main application
+location ~ (index|get|static|report|404|503|health_check)\.php$ {
+    try_files $uri =404;
+    add_header X-Processing-Time $request_time always;
+    add_header X-Request-ID $request_id always;
+    add_header Strict-Transport-Security $mag_hstsheader always;
+    add_header X-UA-Compatible 'IE=Edge,chrome=1';
+    add_header Link "<$scheme://$http_host$request_uri>; rel=\"canonical\"" always;
+    fastcgi_buffers 1024 4k;
+
+    fastcgi_param  PHP_FLAG  "session.auto_start=off \n suhosin.session.cryptua=off";
+    fastcgi_param  PHP_VALUE "memory_limit=4096M \n max_execution_time=3600";
+    fastcgi_read_timeout 600s;
+    fastcgi_connect_timeout 600s;
+    include /usr/local/nginx/conf/503include-only.conf;
+    include /usr/local/nginx/conf/php.conf;
+}
+
+# Banned locations (only reached if the earlier PHP entry point regexes don't match)
+location ~* (\.php$|\.htaccess$|\.git) {
+    deny all;
+}
+
+  include /usr/local/nginx/conf/pre-staticfiles-local-magento.domain.com.conf;
+  include /usr/local/nginx/conf/pre-staticfiles-global.conf;
+  #include /usr/local/nginx/conf/staticfiles.conf;
+  #include /usr/local/nginx/conf/php.conf;
+  #include /usr/local/nginx/conf/drop.conf;
+  #include /usr/local/nginx/conf/errorpage.conf;
+  include /usr/local/nginx/conf/vts_server.conf;
+}
+```
+
+Restart Nginx server
+
+```
+service nginx restart
+```
+
+or via Centmin Mod command shortcut
+
+```
+ngxrestart
+```
+
+curl header test for `http://magento.domain.com:8686/`
+
+```
+curl -Ik http://magento.domain.com:8686/ 
+HTTP/1.1 200 OK
+Date: Wed, 14 Mar 2018 07:48:57 GMT
+Content-Type: text/html; charset=UTF-8
+Connection: keep-alive
+Vary: Accept-Encoding
+Pragma: no-cache
+Cache-Control: max-age=0, must-revalidate, no-cache, no-store
+Expires: Tue, 14 Mar 2017 07:48:57 GMT
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+X-Frame-Options: SAMEORIGIN
+Server: nginx centminmod
+X-Powered-By: centminmod
+X-Processing-Time: 1.500
+X-Request-ID: 90934314e90e859262f427cc05505057
+X-UA-Compatible: IE=Edge,chrome=1
+Link: <http://magento.domain.com:8686/>; rel="canonical"
+```
+
+### Step 4. Modifying Nginx HTTP/2 HTTPS vhost to be a reverse proxy to Varnish Cache backup on port 6081 listening port
+
+Make a backup copying of live Nginx HTTP/2 HTTPS vhost file `magento.domain.com.ssl.conf` as `magento.domain.com.ssl.conf.backup-b4proxy`
+
+```
+cd /usr/local/nginx/conf/conf.d
+cp -a magento.domain.com.ssl.conf magento.domain.com.ssl.conf.backup-b4proxy
+```
+
+Modifying `magento.domain.com.ssl.conf` vhost file to be a reverse proxy in front of Varnish Cache proxying to backend Varnish Cache listening port 6081
+
+```
+# Centmin Mod Getting Started Guide
+# must read http://centminmod.com/getstarted.html
+# For HTTP/2 SSL Setup
+# read http://centminmod.com/nginx_configure_https_ssl_spdy.html
+
+# redirect from www to non-www  forced SSL
+# uncomment, save file and restart Nginx to enable
+# if unsure use return 302 before using return 301
+ server {
+       listen   80;
+       server_name magento.domain.com www.magento.domain.com;
+       return 302 https://$server_name$request_uri;
+ }
+
+server {
+  listen 443 ssl http2 backlog=2048 reuseport;
+  server_name magento.domain.com www.magento.domain.com;
+
+  ssl_dhparam /usr/local/nginx/conf/ssl/magento.domain.com/dhparam.pem;
+  ssl_certificate      /usr/local/nginx/conf/ssl/magento.domain.com/magento.domain.com.crt;
+  ssl_certificate_key  /usr/local/nginx/conf/ssl/magento.domain.com/magento.domain.com.key;
+  include /usr/local/nginx/conf/ssl_include.conf;
+
+  # cloudflare authenticated origin pull cert community.centminmod.com/threads/13847/
+  #ssl_client_certificate /usr/local/nginx/conf/ssl/cloudflare/magento.domain.com/origin.crt;
+  #ssl_verify_client on;
+  http2_max_field_size 16k;
+  http2_max_header_size 32k;
+  # mozilla recommended
+  ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS;
+  ssl_prefer_server_ciphers   on;
+  #add_header Alternate-Protocol  443:npn-spdy/3;
+
+  # before enabling HSTS line below read centminmod.com/nginx_domain_dns_setup.html#hsts
+  #add_header Strict-Transport-Security "max-age=31536000; includeSubdomains;";
+  #add_header X-Frame-Options SAMEORIGIN;
+  #add_header X-Xss-Protection "1; mode=block" always;
+  #add_header X-Content-Type-Options "nosniff" always;
+  #add_header Referrer-Policy "strict-origin-when-cross-origin";
+  #spdy_headers_comp 5;
+  ssl_buffer_size 1369;
+  ssl_session_tickets on;
+  
+  # enable ocsp stapling
+  #resolver 8.8.8.8 8.8.4.4 valid=10m;
+  #resolver_timeout 10s;
+  #ssl_stapling on;
+  #ssl_stapling_verify on;
+  #ssl_trusted_certificate /usr/local/nginx/conf/ssl/magento.domain.com/magento.domain.com-trusted.crt;  
+
+# ngx_pagespeed & ngx_pagespeed handler
+#include /usr/local/nginx/conf/pagespeed.conf;
+#include /usr/local/nginx/conf/pagespeedhandler.conf;
+#include /usr/local/nginx/conf/pagespeedstatslog.conf;
+
+  # limit_conn limit_per_ip 16;
+  # ssi  on;
+
+  access_log /home/nginx/domains/magento.domain.com/log/access.log combined buffer=256k flush=5m;
+  error_log /home/nginx/domains/magento.domain.com/log/error.log;
+
+set $size_cachebypass 0;
+
+if ($query_string ~* nocache) {
+    set $size_cachebypass 1;
+}
+
+location / {
+    include /usr/local/nginx/conf/proxycache_magento.domain.com.conf;
+    proxy_pass http://proxy_backend;
+    #proxy_bind $split_ip;
+    #proxy_bind $remote_addr transparent;
+}
+
+location /check {
+    return 200 "Hello from $hostname. You connected from $remote_addr:$remote_port to $server_addr:$server_port\n";
+}
+}
+```
+
+create `/usr/local/nginx/conf/proxycache_magento.domain.com.conf` with contents below setting `proxy_cache cache_magento.domain.com` as defined within the soon to be created `/usr/local/nginx/conf/proxycache-includes.conf` include file's `proxy_cache_path`. Microcaching is setup with `proxy_cache_valid` for HTTP 200, 302 and 404 status codes set to TTLS = 3 seconds.
+
+```
+add_header X-Cache-Status $upstream_cache_status;
+proxy_cache cache_magento.domain.com;
+proxy_cache_key $scheme$proxy_host$uri$is_args$args;
+proxy_cache_lock on;
+proxy_cache_lock_age 3s;
+proxy_cache_lock_timeout 3s;
+proxy_cache_revalidate on;
+proxy_cache_valid 200 302 3s;
+proxy_cache_valid 404 3s;
+proxy_cache_min_uses 1;
+proxy_ignore_headers Set-Cookie;
+proxy_hide_header Set-Cookie;
+proxy_no_cache $http_pragma $http_authorization $mag_nocacheuri $mag_mobiledevices $size_cachebypass;
+proxy_cache_bypass $http_pragma $http_authorization $mag_nocacheuri $mag_mobiledevices $size_cachebypass;
+proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
+
+proxy_connect_timeout 59s;
+proxy_send_timeout 600;
+proxy_read_timeout 600;
+proxy_buffer_size 8k;
+proxy_buffers 4112 8k;
+proxy_busy_buffers_size 8192k;
+proxy_temp_file_write_size 8192k;
+proxy_pass_header Set-Cookie;
+proxy_redirect off;
+proxy_http_version 1.1;
+proxy_set_header Accept-Encoding '';
+proxy_ignore_headers Cache-Control Expires;
+proxy_set_header Referer $http_referer;
+proxy_set_header Host $host;
+proxy_hide_header X-Powered-By;
+proxy_hide_header Vary;
+proxy_set_header Cookie $http_cookie;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-Host $host;
+proxy_set_header X-Forwarded-Server $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504 http_404;
+```
+
+### Step 5. Setup Nginx proxy include files to enable proxying
+
+At the bottom of `/usr/local/nginx/conf/nginx.conf` just before the last include file before the closing curly bracket `}` add the 2 include files
+
+
+```
+ include /usr/local/nginx/conf/proxycache_map.conf;
+ include /usr/local/nginx/conf/proxycache-includes.conf;
+```
+
+so it looks like below
+
+```
+ include /usr/local/nginx/conf/proxycache_map.conf;
+ include /usr/local/nginx/conf/proxycache-includes.conf;
+ include /usr/local/nginx/conf/conf.d/*.conf;
+}
+```
+
+create these 2 files
+
+* `/usr/local/nginx/conf/proxycache_map.conf`
+* `/usr/local/nginx/conf/proxycache-includes.conf`
+
+contents of `/usr/local/nginx/conf/proxycache_map.conf` initially sets up Nginx HTTP/2 HTTPS to reverse proxy to Nginx non-HTTPS backend on port 8686 `server localhost:8686 weight=1` to confirm Nginx reverse proxy works first and has varnish cache backend commented out and disabled for now `server localhost:6081 weight=1`
+
+upstream proxy_backend {
+    zone upstream_dynamic 512k;
+    keepalive 128;
+    #least_conn;
+    # proxy to varnish cache backend
+    #server localhost:6081 weight=1;
+    # proxy to nginx backend
+    server localhost:8686 weight=1;
+}
+    
+map $request_uri $mag_nocacheuri {
+       default              0;
+    ~^/register             1;
+    ~^/login                1;
+    ~^/validate-field       1;
+    ~^/captcha              1;
+    ~^/lost-password        1;
+    ~^/cart/                1;
+    ~^/checkout/            1;
+    ~^/add-to-cart=         1;
+    ~^/wp-admin/            1;
+    ~^/my-account/          1;
+    ~^/members/             1;
+    ~^/signup/              1;
+    ~^/join/                1;
+    ~^/two-step             1;
+    ~^/two-step             1;
+}
+
+map $http_user_agent $mag_mobiledevices {
+    default                                      0;
+    ~*(iPad|iPhone|Android|IEMobile|Blackberry)  1;
+    "~*Firefox.*Mobile"                          1;
+    "~*ipod.*mobile"                             1;
+    "~*Opera\ Mini"                              1;
+    "~*Opera\ Mobile"                            1;
+    "~*Mobile"                                   1;
+    "~*Tablet"                                   1;
+    "~*Kindle"                                   1;
+    "~*Windows\ Phone"                           1;
+}
+
+split_clients "$remote_addr$remote_port" $split_ip {
+    4%  127.0.0.2;
+    4%  127.0.0.3;
+    4%  127.0.0.4;
+    4%  127.0.0.5;
+    4%  127.0.0.6;
+    4%  127.0.0.7;
+    4%  127.0.0.8;
+    4%  127.0.0.9;
+    4%  127.0.0.10;
+    4%  127.0.0.11;
+    4%  127.0.0.12;
+    4%  127.0.0.13;
+    4%  127.0.0.14;
+    4%  127.0.0.15;
+    4%  127.0.0.16;
+    4%  127.0.0.17;
+    4%  127.0.0.18;
+    4%  127.0.0.19;
+    4%  127.0.0.20;
+    4%  127.0.0.21;
+    4%  127.0.0.22;
+    4%  127.0.0.23;
+    4%  127.0.0.24;
+    4%  127.0.0.25;
+    *   127.0.0.26;
+}
+
+contents of `/usr/local/nginx/conf/proxycache-includes.conf` as we will setup some micro caching too on Nginx HTTP/2 HTTPS reverse proxy for just TTLS = 3 seconds
+
+```
+proxy_cache_path /home/nginx/proxycache/0-magento.domain.com-proxycache levels=1:2 keys_zone=cache_magento.domain.com:300m max_size=1200m inactive=2m manager_files=200 manager_threshold=200 manager_sleep=50 loader_files=200 loader_threshold=200 loader_sleep=50;
+```
+
+create `proxy_cache_path` directory
+
+```
+vhostname=magento.domain.com
+mkdir -p "/home/nginx/proxycache/0-$vhostname-proxycache"
+chown -R nginx:nginx "/home/nginx/proxycache/0-$vhostname-proxycache"
+chmod 0770 "/home/nginx/proxycache/0-$vhostname-proxycache"
+```
+
+Restart Nginx server
+
+```
+service nginx restart
+```
+
+or via Centmin Mod command shortcut
+
+```
+ngxrestart
+```
+
+confirm Nginx reverse proxy works first with Nginx backend on port 8686 defined in `/usr/local/nginx/conf/proxycache_map.conf` upstream
+
+```
+curl -Ik https://magento.domain.com/
+HTTP/1.1 200 OK
+Date: Wed, 14 Mar 2018 08:36:23 GMT
+Content-Type: text/html; charset=UTF-8
+Connection: keep-alive
+Vary: Accept-Encoding
+Pragma: no-cache
+Cache-Control: max-age=0, must-revalidate, no-cache, no-store
+Expires: Tue, 14 Mar 2017 08:16:40 GMT
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+X-Frame-Options: SAMEORIGIN
+X-Processing-Time: 2.297
+X-Request-ID: ae327d25a26333a06778001b9f9ad1f5
+X-UA-Compatible: IE=Edge,chrome=1
+Link: <https://magento.domain.com/>; rel="canonical"
+Server: nginx centminmod
+X-Powered-By: centminmod
+X-Cache-Status: HIT
+```
+
+confirm HTTP to HTTPS redirect works
+
+```
+curl -Ik http://magento.domain.com/
+HTTP/1.1 302 Moved Temporarily
+Date: Wed, 14 Mar 2018 08:49:58 GMT
+Content-Type: text/html
+Content-Length: 154
+Connection: keep-alive
+Location: https://magento.domain.com/
+Server: nginx centminmod
+X-Powered-By: centminmod
+```
+
+### Step 6. Switch Magento To Use Varnish Cache
+
+As per [Magento 2.2.2 documentation](http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish-magento.html), Varnish Cache needs to be set up for Magento full page caching.
+
+This can be done via cmd line
+
+```
+vhostname=magento.domain.com
+WEBROOT="/home/nginx/domains/${vhostname}/public"
+IP=$(curl -4s ipinfo.io/ip)
+cd $WEBROOT
+n98-magerun2 config:set system/full_page_cache/caching_application 2 --skip-root-check
+n98-magerun2 config:set system/full_page_cache/ttl 86400 --skip-root-check
+n98-magerun2 config:set system/full_page_cache/varnish/access_list "localhost, 127.0.0.1, $IP" --skip-root-check
+n98-magerun2 config:set system/full_page_cache/varnish/backend_port 8686 --skip-root-check
+n98-magerun2 config:show system/full_page_cache/caching_application --skip-root-check
+n98-magerun2 config:show system/full_page_cache/varnish/access_list --skip-root-check
+n98-magerun2 config:show system/full_page_cache/varnish/backend_port --skip-root-check
+php $WEBROOT/bin/magento cache:flush
+```
+
+Verify values set
+
+```
+n98-magerun2 config:show system/full_page_cache/caching_application --skip-root-check
+n98-magerun2 config:show system/full_page_cache/ttl --skip-root-check
+n98-magerun2 config:show system/full_page_cache/varnish/ --skip-root-check
+```
+
+```
+n98-magerun2 config:show system/full_page_cache/caching_application --skip-root-check
+2
+
+n98-magerun2 config:show system/full_page_cache/ttl --skip-root-check
+86400
+
+n98-magerun2 config:show system/full_page_cache/varnish/ --skip-root-check
+system/full_page_cache/varnish/access_list - localhost, 127.0.0.1, server_ipaddress
+system/full_page_cache/varnish/backend_host - localhost
+system/full_page_cache/varnish/backend_port - 8686
+system/full_page_cache/varnish/grace_period - 300
+```
+
+This is what it looks like in Magento Admin area > Stores > Advanced > System > Full Page Cache
+
+![](/screenshots/magento-222-admin-varnish-cache-01.png)
+
+Above initial Nginx HTTP/2 HTTPS reverse proxy setup uses upstream defined as the Nginx backend on port 8686 defined in `/usr/local/nginx/conf/proxycache_map.conf` upstream. This needs to switched to using Varnish Cache on port 6081 as backend within upstream definition
+
+So change and disable `server localhost:8686 weight=1` from
+
+```
+upstream proxy_backend {
+    zone upstream_dynamic 512k;
+    keepalive 128;
+    #least_conn;
+    # proxy to varnish cache backend
+    #server localhost:6081 weight=1;
+    # proxy to nginx backend
+    server localhost:8686 weight=1;
+}
+```
+
+to using Varnish Cache server as backend via `server localhost:6081 weight=1`
+
+```
+upstream proxy_backend {
+    zone upstream_dynamic 512k;
+    keepalive 128;
+    #least_conn;
+    # proxy to varnish cache backend
+    server localhost:6081 weight=1;
+    # proxy to nginx backend
+    #server localhost:8686 weight=1;
+}
+```
+
+Restart Nginx server
+
+```
+service nginx restart
+```
+
+or via Centmin Mod command shortcut
+
+```
+ngxrestart
+```
+
+Verify Magento 2.2.2 Varnish Caching with HTTP/2 setup
+
+```
+varnishadm param.show feature 
+feature
+        Value is: +http2
+        Default is: none
+
+        Enable/Disable various minor features.
+           none                       Disable all features.
+
+        Use +/- prefix to enable/disable individual feature:
+           short_panic                Short panic message.
+           wait_silo                  Wait for persistent silo.
+           no_coredump                No coredumps.
+           esi_ignore_https           Treat HTTPS as HTTP in
+                                      ESI:includes
+           esi_disable_xml_check      Don't check of body looks like
+                                      XML
+           esi_ignore_other_elements  Ignore non-esi XML-elements
+           esi_remove_bom             Remove UTF-8 BOM
+           https_scheme               Also split https URIs
+           http2                      Support HTTP/2 protocol
+
+```
+
+```
+varnishadm param.show
+accept_filter              -
+acceptor_sleep_decay       0.9 (default)
+acceptor_sleep_incr        0.000 [seconds] (default)
+acceptor_sleep_max         0.050 [seconds] (default)
+auto_restart               on [bool] (default)
+backend_idle_timeout       60.000 [seconds] (default)
+ban_cutoff                 0 [bans] (default)
+ban_dups                   on [bool] (default)
+ban_lurker_age             60.000 [seconds] (default)
+ban_lurker_batch           1000 (default)
+ban_lurker_holdoff         0.010 [seconds] (default)
+ban_lurker_sleep           0.010 [seconds] (default)
+between_bytes_timeout      60.000 [seconds] (default)
+cc_command                 exec gcc -std=gnu99 -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches   -m64 -mtune=generic -Wall -Werror -Wno-error=unused-result -pthread -fpic -shared -Wl,-x -o %o %s (default)
+cli_buffer                 8k [bytes] (default)
+cli_limit                  48k [bytes] (default)
+cli_timeout                10.000 [seconds]
+clock_skew                 10 [seconds] (default)
+clock_step                 1.000 [seconds] (default)
+connect_timeout            3.500 [seconds] (default)
+critbit_cooloff            180.000 [seconds] (default)
+debug                      none (default)
+default_grace              10.000 [seconds] (default)
+default_keep               0.000 [seconds] (default)
+default_ttl                120.000 [seconds] (default)
+feature                    +http2
+fetch_chunksize            16k [bytes] (default)
+fetch_maxchunksize         0.25G [bytes] (default)
+first_byte_timeout         60.000 [seconds] (default)
+gzip_buffer                32k [bytes] (default)
+gzip_level                 6 (default)
+gzip_memlevel              8 (default)
+h2_rx_window_increment     1M [bytes] (default)
+h2_rx_window_low_water     10M [bytes] (default)
+http_gzip_support          on [bool] (default)
+http_max_hdr               64 [header lines] (default)
+http_range_support         on [bool] (default)
+http_req_hdr_len           8k [bytes] (default)
+http_req_size              32k [bytes] (default)
+http_resp_hdr_len          48000b [bytes]
+http_resp_size             32k [bytes] (default)
+idle_send_timeout          60.000 [seconds] (default)
+listen_depth               4096 [connections]
+lru_interval               2.000 [seconds] (default)
+max_esi_depth              5 [levels] (default)
+max_restarts               4 [restarts] (default)
+max_retries                4 [retries] (default)
+nuke_limit                 50 [allocations] (default)
+pcre_match_limit           10000 (default)
+pcre_match_limit_recursion 20 (default)
+ping_interval              3 [seconds] (default)
+pipe_timeout               60.000 [seconds] (default)
+pool_req                   10,100,10 (default)
+pool_sess                  10,100,10 (default)
+pool_vbo                   10,100,10 (default)
+prefer_ipv6                off [bool] (default)
+rush_exponent              3 [requests per request] (default)
+send_timeout               600.000 [seconds] (default)
+shm_reclen                 255b [bytes] (default)
+shortlived                 10.000 [seconds] (default)
+sigsegv_handler            on [bool] (default)
+syslog_cli_traffic         on [bool] (default)
+tcp_fastopen               on [bool]
+tcp_keepalive_intvl        30.000 [seconds] (default)
+tcp_keepalive_probes       3 [probes] (default)
+tcp_keepalive_time         240.000 [seconds] (default)
+thread_pool_add_delay      0.020 [seconds]
+thread_pool_destroy_delay  1.000 [seconds] (default)
+thread_pool_fail_delay     0.200 [seconds] (default)
+thread_pool_max            1500 [threads]
+thread_pool_min            500 [threads]
+thread_pool_reserve        0 [threads] (default)
+thread_pool_stack          48k [bytes] (default)
+thread_pool_timeout        300.000 [seconds] (default)
+thread_pools               2 [pools] (default)
+thread_queue_limit         20 (default)
+thread_stats_rate          10 [requests] (default)
+timeout_idle               5.000 [seconds] (default)
+timeout_linger             0.050 [seconds] (default)
+vcc_allow_inline_c         off [bool] (default)
+vcc_err_unref              on [bool] (default)
+vcc_unsafe_path            on [bool] (default)
+vcl_cooldown               600.000 [seconds] (default)
+vcl_dir                    /etc/varnish:/usr/share/varnish/vcl (default)
+vcl_path                   /etc/varnish:/usr/share/varnish/vcl (default)
+vmod_dir                   /usr/lib64/varnish/vmods (default)
+vmod_path                  /usr/lib64/varnish/vmods (default)
+vsl_buffer                 4k [bytes] (default)
+vsl_mask                   -VCL_trace,-WorkThread,-Hash,-VfpAcct (default)
+vsl_reclen                 255b [bytes] (default)
+vsl_space                  80M [bytes] (default)
+vsm_free_cooldown          60.000 [seconds] (default)
+vsm_space                  1M [bytes] (default)
+workspace_backend          64k [bytes] (default)
+workspace_client           64k [bytes] (default)
+workspace_session          0.50k [bytes] (default)
+workspace_thread           2k [bytes] (default)
+```
+
+```
+curl -Ik https://magento.domain.com/
+HTTP/1.1 200 OK
+Date: Wed, 14 Mar 2018 12:19:42 GMT
+Content-Type: text/html; charset=UTF-8
+Connection: keep-alive
+Vary: Accept-Encoding
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+X-Frame-Options: SAMEORIGIN
+X-Processing-Time: 0.099
+X-Request-ID: 942205ca8c4b080ab7d4b1b422eca918
+X-UA-Compatible: IE=Edge,chrome=1
+Pragma: no-cache
+Expires: -1
+Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+Server: nginx centminmod
+X-Powered-By: centminmod
+X-Cache-Status: HIT
+```
+
+```
+curl -Ik http://magento.domain.com:6081/
+HTTP/1.1 200 OK
+Date: Wed, 14 Mar 2018 12:12:44 GMT
+Content-Type: text/html; charset=UTF-8
+Vary: Accept-Encoding
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+X-Frame-Options: SAMEORIGIN
+X-Processing-Time: 1.101
+X-Request-ID: 7897e4a2c619b4b62117de8dde990825
+X-UA-Compatible: IE=Edge,chrome=1
+Pragma: no-cache
+Expires: -1
+Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+Accept-Ranges: bytes
+Connection: keep-alive
+```
+
+Quick benchmarks with Redis caching for sessions and backend and Varnish Cache for full page caching and a huge boost in performance compared to using Redis caching for full page caching jumping from 65-68 requests/sec and TTFB thread latency max at between 134-158ms.
+
+first run without cache warm up with 569 requests/s and TTFB thread latency max at 581ms
+
+```
+domain=https://magento.domain.com
+wrk-cmm -t2 -c2 -d10s --breakout -H 'Accept-Encoding: gzip' -s scripts/setup.lua --latency $domain
+thread 1 created
+thread 2 created
+Running 10s test @ https://magento.domain.com
+  2 threads and 2 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    11.03ms   53.21ms 581.69ms   97.69%
+    Connect    12.42ms    9.14ms  28.15ms   55.00%
+    TTFB       10.53ms   54.13ms 581.03ms   97.63%
+    TTLB      709.65us    0.90ms  26.59ms   96.59%
+    Req/Sec   294.81    119.88   620.00     64.95%
+  Latency Distribution
+     50%    2.97ms
+     75%    3.94ms
+     90%    7.20ms
+     99%  356.80ms
+  5736 requests in 10.08s, 39.96MB read
+Requests/sec:    569.02
+Transfer/sec:      3.96MB
+thread 1 made 2680 requests and got 2678 responses
+thread 2 made 3059 requests and got 3058 responses
+```
+
+second run with warmed up cache with 1,011 requests/second and TTFB thread latency max at 12.54ms
+
+```
+wrk-cmm -t2 -c2 -d10s --breakout -H 'Accept-Encoding: gzip' -s scripts/setup.lua --latency $domain
+thread 1 created
+thread 2 created
+Running 10s test @ https://magento.domain.com
+  2 threads and 2 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.99ms    0.90ms  13.00ms   91.47%
+    Connect     7.28ms    5.85ms  17.71ms   52.00%
+    TTFB        1.46ms  679.66us  12.54ms   81.05%
+    TTLB      505.80us  583.70us   6.74ms   91.19%
+    Req/Sec   508.07    126.29   720.00     66.50%
+  Latency Distribution
+     50%    1.49ms
+     75%    2.49ms
+     90%    2.76ms
+     99%    5.49ms
+  10124 requests in 10.01s, 70.53MB read
+Requests/sec:   1011.06
+Transfer/sec:      7.04MB
+thread 1 made 5153 requests and got 5151 responses
+```
+
+Varnish cache stats after benchmark tests
+
+```
+varnishstat -1 | column -t
+MGT.uptime                          238               1.00      Management     process      uptime
+MGT.child_start                     1                 0.00      Child          process      started
+MGT.child_exit                      0                 0.00      Child          process      normal         exit
+MGT.child_stop                      0                 0.00      Child          process      unexpected     exit
+MGT.child_died                      0                 0.00      Child          process      died           (signal)
+MGT.child_dump                      0                 0.00      Child          process      core           dumped
+MGT.child_panic                     0                 0.00      Child          process      panic
+MAIN.summs                          748               3.13      stat           summ         operations
+MAIN.uptime                         239               1.00      Child          process      uptime
+MAIN.sess_conn                      166               0.69      Sessions       accepted
+MAIN.sess_drop                      0                 0.00      Sessions       dropped
+MAIN.sess_fail                      0                 0.00      Session        accept       failures
+MAIN.client_req_400                 0                 0.00      Client         requests     received,      subject     to           400       errors
+MAIN.client_req_417                 0                 0.00      Client         requests     received,      subject     to           417       errors
+MAIN.client_req                     166               0.69      Good           client       requests       received
+MAIN.cache_hit                      12                0.05      Cache          hits
+MAIN.cache_hitpass                  0                 0.00      Cache          hits         for            pass.
+MAIN.cache_hitmiss                  0                 0.00      Cache          hits         for            miss.
+MAIN.cache_miss                     2                 0.01      Cache          misses
+MAIN.backend_conn                   8                 0.03      Backend        conn.        success
+MAIN.backend_unhealthy              0                 0.00      Backend        conn.        not            attempted
+MAIN.backend_busy                   0                 0.00      Backend        conn.        too            many
+MAIN.backend_fail                   0                 0.00      Backend        conn.        failures
+MAIN.backend_reuse                  153               0.64      Backend        conn.        reuses
+MAIN.backend_recycle                161               0.67      Backend        conn.        recycles
+MAIN.backend_retry                  0                 0.00      Backend        conn.        retry
+MAIN.fetch_head                     0                 0.00      Fetch          no           body           (HEAD)
+MAIN.fetch_length                   159               0.67      Fetch          with         Length
+MAIN.fetch_chunked                  2                 0.01      Fetch          chunked
+MAIN.fetch_eof                      0                 0.00      Fetch          EOF
+MAIN.fetch_bad                      0                 0.00      Fetch          bad          T-E
+MAIN.fetch_none                     0                 0.00      Fetch          no           body
+MAIN.fetch_1xx                      0                 0.00      Fetch          no           body           (1xx)
+MAIN.fetch_204                      0                 0.00      Fetch          no           body           (204)
+MAIN.fetch_304                      0                 0.00      Fetch          no           body           (304)
+MAIN.fetch_failed                   0                 0.00      Fetch          failed       (all           causes)
+MAIN.fetch_no_thread                0                 0.00      Fetch          failed       (no            thread)
+MAIN.pools                          2                 .         Number         of           thread         pools
+MAIN.threads                        1000              .         Total          number       of             threads
+MAIN.threads_limited                0                 0.00      Threads        hit          max
+MAIN.threads_created                1000              4.18      Threads        created
+MAIN.threads_destroyed              0                 0.00      Threads        destroyed
+MAIN.threads_failed                 0                 0.00      Thread         creation     failed
+MAIN.thread_queue_len               0                 .         Length         of           session        queue
+MAIN.busy_sleep                     0                 0.00      Number         of           requests       sent        to           sleep     on        busy  objhdr
+MAIN.busy_wakeup                    0                 0.00      Number         of           requests       woken       after        sleep     on        busy  objhdr
+MAIN.busy_killed                    0                 0.00      Number         of           requests       killed      after        sleep     on        busy  objhdr
+MAIN.sess_queued                    0                 0.00      Sessions       queued       for            thread
+MAIN.sess_dropped                   0                 0.00      Sessions       dropped      for            thread
+MAIN.req_dropped                    0                 0.00      Requests       dropped
+MAIN.n_object                       2                 .         object         structs      made
+MAIN.n_vampireobject                0                 .         unresurrected  objects
+MAIN.n_objectcore                   4                 .         objectcore     structs      made
+MAIN.n_objecthead                   4                 .         objecthead     structs      made
+MAIN.n_backend                      1                 .         Number         of           backends
+MAIN.n_expired                      0                 .         Number         of           expired        objects
+MAIN.n_lru_nuked                    0                 .         Number         of           LRU            nuked       objects
+MAIN.n_lru_moved                    6                 .         Number         of           LRU            moved       objects
+MAIN.losthdr                        0                 0.00      HTTP           header       overflows
+MAIN.s_sess                         166               0.69      Total          sessions     seen
+MAIN.s_pipe                         0                 0.00      Total          pipe         sessions       seen
+MAIN.s_pass                         159               0.67      Total          pass-ed      requests       seen
+MAIN.s_fetch                        161               0.67      Total          backend      fetches        initiated
+MAIN.s_synth                        0                 0.00      Total          synthethic   responses      made
+MAIN.s_req_hdrbytes                 169119            707.61    Request        header       bytes
+MAIN.s_req_bodybytes                0                 0.00      Request        body         bytes
+MAIN.s_resp_hdrbytes                67866             283.96    Response       header       bytes
+MAIN.s_resp_bodybytes               2616180           10946.36  Response       body         bytes
+MAIN.s_pipe_hdrbytes                0                 0.00      Pipe           request      header         bytes
+MAIN.s_pipe_in                      0                 0.00      Piped          bytes        from           client
+MAIN.s_pipe_out                     0                 0.00      Piped          bytes        to             client
+MAIN.sess_closed                    166               0.69      Session        Closed
+MAIN.sess_closed_err                0                 0.00      Session        Closed       with           error
+MAIN.sess_readahead                 0                 0.00      Session        Read         Ahead
+MAIN.sess_herd                      0                 0.00      Session        herd
+MAIN.sc_rem_close                   0                 0.00      Session        OK           REM_CLOSE
+MAIN.sc_req_close                   166               0.69      Session        OK           REQ_CLOSE
+MAIN.sc_req_http10                  0                 0.00      Session        Err          REQ_HTTP10
+MAIN.sc_rx_bad                      0                 0.00      Session        Err          RX_BAD
+MAIN.sc_rx_body                     0                 0.00      Session        Err          RX_BODY
+MAIN.sc_rx_junk                     0                 0.00      Session        Err          RX_JUNK
+MAIN.sc_rx_overflow                 0                 0.00      Session        Err          RX_OVERFLOW
+MAIN.sc_rx_timeout                  0                 0.00      Session        Err          RX_TIMEOUT
+MAIN.sc_tx_pipe                     0                 0.00      Session        OK           TX_PIPE
+MAIN.sc_tx_error                    0                 0.00      Session        Err          TX_ERROR
+MAIN.sc_tx_eof                      0                 0.00      Session        OK           TX_EOF
+MAIN.sc_resp_close                  0                 0.00      Session        OK           RESP_CLOSE
+MAIN.sc_overload                    0                 0.00      Session        Err          OVERLOAD
+MAIN.sc_pipe_overflow               0                 0.00      Session        Err          PIPE_OVERFLOW
+MAIN.sc_range_short                 0                 0.00      Session        Err          RANGE_SHORT
+MAIN.sc_req_http20                  0                 0.00      Session        Err          REQ_HTTP20
+MAIN.sc_vcl_failure                 0                 0.00      Session        Err          VCL_FAILURE
+MAIN.shm_records                    25737             107.69    SHM            records
+MAIN.shm_writes                     1512              6.33      SHM            writes
+MAIN.shm_flushes                    132               0.55      SHM            flushes      due            to          overflow
+MAIN.shm_cont                       32                0.13      SHM            MTX          contention
+MAIN.shm_cycles                     0                 0.00      SHM            cycles       through        buffer
+MAIN.backend_req                    161               0.67      Backend        requests     made
+MAIN.n_vcl                          1                 .         Number         of           loaded         VCLs        in           total
+MAIN.n_vcl_avail                    1                 .         Number         of           VCLs           available
+MAIN.n_vcl_discard                  0                 .         Number         of           discarded      VCLs
+MAIN.vcl_fail                       0                 0.00      VCL            failures
+MAIN.bans                           1                 .         Count          of           bans
+MAIN.bans_completed                 1                 .         Number         of           bans           marked      'completed'
+MAIN.bans_obj                       0                 .         Number         of           bans           using       obj.*
+MAIN.bans_req                       0                 .         Number         of           bans           using       req.*
+MAIN.bans_added                     1                 0.00      Bans           added
+MAIN.bans_deleted                   0                 0.00      Bans           deleted
+MAIN.bans_tested                    0                 0.00      Bans           tested       against        objects     (lookup)
+MAIN.bans_obj_killed                0                 0.00      Objects        killed       by             bans        (lookup)
+MAIN.bans_lurker_tested             0                 0.00      Bans           tested       against        objects     (lurker)
+MAIN.bans_tests_tested              0                 0.00      Ban            tests        tested         against     objects      (lookup)
+MAIN.bans_lurker_tests_tested       0                 0.00      Ban            tests        tested         against     objects      (lurker)
+MAIN.bans_lurker_obj_killed         0                 0.00      Objects        killed       by             bans        (lurker)
+MAIN.bans_lurker_obj_killed_cutoff  0                 0.00      Objects        killed       by             bans        for          cutoff    (lurker)
+MAIN.bans_dups                      0                 0.00      Bans           superseded   by             other       bans
+MAIN.bans_lurker_contention         0                 0.00      Lurker         gave         way            for         lookup
+MAIN.bans_persisted_bytes           16                .         Bytes          used         by             the         persisted    ban       lists
+MAIN.bans_persisted_fragmentation   0                 .         Extra          bytes        in             persisted   ban          lists     due       to    fragmentation
+MAIN.n_purges                       0                 .         Number         of           purge          operations  executed
+MAIN.n_obj_purged                   0                 .         Number         of           purged         objects
+MAIN.exp_mailed                     2                 0.01      Number         of           objects        mailed      to           expiry    thread
+MAIN.exp_received                   2                 0.01      Number         of           objects        received    by           expiry    thread
+MAIN.hcb_nolock                     14                0.06      HCB            Lookups      without        lock
+MAIN.hcb_lock                       2                 0.01      HCB            Lookups      with           lock
+MAIN.hcb_insert                     2                 0.01      HCB            Inserts
+MAIN.esi_errors                     0                 0.00      ESI            parse        errors         (unlock)
+MAIN.esi_warnings                   0                 0.00      ESI            parse        warnings       (unlock)
+MAIN.vmods                          1                 .         Loaded         VMODs
+MAIN.n_gzip                         158               0.66      Gzip           operations
+MAIN.n_gunzip                       165               0.69      Gunzip         operations
+MAIN.n_test_gunzip                  0                 0.00      Test           gunzip       operations
+LCK.backend.creat                   3                 0.01      Created        locks
+LCK.backend.destroy                 0                 0.00      Destroyed      locks
+LCK.backend.locks                   473               1.98      Lock           Operations
+LCK.backend_tcp.creat               1                 0.00      Created        locks
+LCK.backend_tcp.destroy             0                 0.00      Destroyed      locks
+LCK.backend_tcp.locks               636               2.66      Lock           Operations
+LCK.ban.creat                       1                 0.00      Created        locks
+LCK.ban.destroy                     0                 0.00      Destroyed      locks
+LCK.ban.locks                       183               0.77      Lock           Operations
+LCK.busyobj.creat                   163               0.68      Created        locks
+LCK.busyobj.destroy                 161               0.67      Destroyed      locks
+LCK.busyobj.locks                   1726              7.22      Lock           Operations
+LCK.cli.creat                       1                 0.00      Created        locks
+LCK.cli.destroy                     0                 0.00      Destroyed      locks
+LCK.cli.locks                       91                0.38      Lock           Operations
+LCK.exp.creat                       1                 0.00      Created        locks
+LCK.exp.destroy                     0                 0.00      Destroyed      locks
+LCK.exp.locks                       13                0.05      Lock           Operations
+LCK.hcb.creat                       1                 0.00      Created        locks
+LCK.hcb.destroy                     0                 0.00      Destroyed      locks
+LCK.hcb.locks                       4                 0.02      Lock           Operations
+LCK.lru.creat                       2                 0.01      Created        locks
+LCK.lru.destroy                     0                 0.00      Destroyed      locks
+LCK.lru.locks                       8                 0.03      Lock           Operations
+LCK.mempool.creat                   5                 0.02      Created        locks
+LCK.mempool.destroy                 0                 0.00      Destroyed      locks
+LCK.mempool.locks                   2108              8.82      Lock           Operations
+LCK.objhdr.creat                    5                 0.02      Created        locks
+LCK.objhdr.destroy                  0                 0.00      Destroyed      locks
+LCK.objhdr.locks                    2023              8.46      Lock           Operations
+LCK.pipestat.creat                  1                 0.00      Created        locks
+LCK.pipestat.destroy                0                 0.00      Destroyed      locks
+LCK.pipestat.locks                  0                 0.00      Lock           Operations
+LCK.sess.creat                      166               0.69      Created        locks
+LCK.sess.destroy                    166               0.69      Destroyed      locks
+LCK.sess.locks                      502               2.10      Lock           Operations
+LCK.vbe.creat                       1                 0.00      Created        locks
+LCK.vbe.destroy                     0                 0.00      Destroyed      locks
+LCK.vbe.locks                       134               0.56      Lock           Operations
+LCK.vcapace.creat                   1                 0.00      Created        locks
+LCK.vcapace.destroy                 0                 0.00      Destroyed      locks
+LCK.vcapace.locks                   0                 0.00      Lock           Operations
+LCK.vcl.creat                       1                 0.00      Created        locks
+LCK.vcl.destroy                     0                 0.00      Destroyed      locks
+LCK.vcl.locks                       355               1.49      Lock           Operations
+LCK.vxid.creat                      1                 0.00      Created        locks
+LCK.vxid.destroy                    0                 0.00      Destroyed      locks
+LCK.vxid.locks                      15                0.06      Lock           Operations
+LCK.waiter.creat                    2                 0.01      Created        locks
+LCK.waiter.destroy                  0                 0.00      Destroyed      locks
+LCK.waiter.locks                    504               2.11      Lock           Operations
+LCK.wq.creat                        3                 0.01      Created        locks
+LCK.wq.destroy                      0                 0.00      Destroyed      locks
+LCK.wq.locks                        3419              14.31     Lock           Operations
+LCK.wstat.creat                     1                 0.00      Created        locks
+LCK.wstat.destroy                   0                 0.00      Destroyed      locks
+LCK.wstat.locks                     387               1.62      Lock           Operations
+MEMPOOL.busyobj.live                0                 .         In             use
+MEMPOOL.busyobj.pool                10                .         In             Pool
+MEMPOOL.busyobj.sz_wanted           65536             .         Size           requested
+MEMPOOL.busyobj.sz_actual           65504             .         Size           allocated
+MEMPOOL.busyobj.allocs              161               0.67      Allocations
+MEMPOOL.busyobj.frees               161               0.67      Frees
+MEMPOOL.busyobj.recycle             161               0.67      Recycled       from         pool
+MEMPOOL.busyobj.timeout             1                 0.00      Timed          out          from           pool
+MEMPOOL.busyobj.toosmall            0                 0.00      Too            small        to             recycle
+MEMPOOL.busyobj.surplus             0                 0.00      Too            many         for            pool
+MEMPOOL.busyobj.randry              0                 0.00      Pool           ran          dry
+MEMPOOL.req0.live                   0                 .         In             use
+MEMPOOL.req0.pool                   10                .         In             Pool
+MEMPOOL.req0.sz_wanted              65536             .         Size           requested
+MEMPOOL.req0.sz_actual              65504             .         Size           allocated
+MEMPOOL.req0.allocs                 89                0.37      Allocations
+MEMPOOL.req0.frees                  89                0.37      Frees
+MEMPOOL.req0.recycle                89                0.37      Recycled       from         pool
+MEMPOOL.req0.timeout                1                 0.00      Timed          out          from           pool
+MEMPOOL.req0.toosmall               0                 0.00      Too            small        to             recycle
+MEMPOOL.req0.surplus                0                 0.00      Too            many         for            pool
+MEMPOOL.req0.randry                 0                 0.00      Pool           ran          dry
+MEMPOOL.sess0.live                  0                 .         In             use
+MEMPOOL.sess0.pool                  10                .         In             Pool
+MEMPOOL.sess0.sz_wanted             512               .         Size           requested
+MEMPOOL.sess0.sz_actual             480               .         Size           allocated
+MEMPOOL.sess0.allocs                83                0.35      Allocations
+MEMPOOL.sess0.frees                 83                0.35      Frees
+MEMPOOL.sess0.recycle               83                0.35      Recycled       from         pool
+MEMPOOL.sess0.timeout               1                 0.00      Timed          out          from           pool
+MEMPOOL.sess0.toosmall              0                 0.00      Too            small        to             recycle
+MEMPOOL.sess0.surplus               0                 0.00      Too            many         for            pool
+MEMPOOL.sess0.randry                0                 0.00      Pool           ran          dry
+LCK.sma.creat                       2                 0.01      Created        locks
+LCK.sma.destroy                     0                 0.00      Destroyed      locks
+LCK.sma.locks                       905               3.79      Lock           Operations
+SMA.s0.c_req                        7                 0.03      Allocator      requests
+SMA.s0.c_fail                       0                 0.00      Allocator      failures
+SMA.s0.c_bytes                      42019             175.81    Bytes          allocated
+SMA.s0.c_freed                      32768             137.10    Bytes          freed
+SMA.s0.g_alloc                      5                 .         Allocations    outstanding
+SMA.s0.g_bytes                      9251              .         Bytes          outstanding
+SMA.s0.g_space                      268426205         .         Bytes          available
+SMA.Transient.c_req                 448               1.87      Allocator      requests
+SMA.Transient.c_fail                0                 0.00      Allocator      failures
+SMA.Transient.c_bytes               3105627           12994.26  Bytes          allocated
+SMA.Transient.c_freed               3105627           12994.26  Bytes          freed
+SMA.Transient.g_alloc               0                 .         Allocations    outstanding
+SMA.Transient.g_bytes               0                 .         Bytes          outstanding
+SMA.Transient.g_space               0                 .         Bytes          available
+MEMPOOL.req1.live                   0                 .         In             use
+MEMPOOL.req1.pool                   10                .         In             Pool
+MEMPOOL.req1.sz_wanted              65536             .         Size           requested
+MEMPOOL.req1.sz_actual              65504             .         Size           allocated
+MEMPOOL.req1.allocs                 84                0.35      Allocations
+MEMPOOL.req1.frees                  84                0.35      Frees
+MEMPOOL.req1.recycle                84                0.35      Recycled       from         pool
+MEMPOOL.req1.timeout                0                 0.00      Timed          out          from           pool
+MEMPOOL.req1.toosmall               0                 0.00      Too            small        to             recycle
+MEMPOOL.req1.surplus                0                 0.00      Too            many         for            pool
+MEMPOOL.req1.randry                 0                 0.00      Pool           ran          dry
+MEMPOOL.sess1.live                  0                 .         In             use
+MEMPOOL.sess1.pool                  10                .         In             Pool
+MEMPOOL.sess1.sz_wanted             512               .         Size           requested
+MEMPOOL.sess1.sz_actual             480               .         Size           allocated
+MEMPOOL.sess1.allocs                83                0.35      Allocations
+MEMPOOL.sess1.frees                 83                0.35      Frees
+MEMPOOL.sess1.recycle               83                0.35      Recycled       from         pool
+MEMPOOL.sess1.timeout               1                 0.00      Timed          out          from           pool
+MEMPOOL.sess1.toosmall              0                 0.00      Too            small        to             recycle
+MEMPOOL.sess1.surplus               0                 0.00      Too            many         for            pool
+MEMPOOL.sess1.randry                0                 0.00      Pool           ran          dry
+VBE.boot.default.happy              4503599627370495  .         Happy          health       probes
+VBE.boot.default.bereq_hdrbytes     172088            720.03    Request        header       bytes
+VBE.boot.default.bereq_bodybytes    0                 0.00      Request        body         bytes
+VBE.boot.default.beresp_hdrbytes    76081             318.33    Response       header       bytes
+VBE.boot.default.beresp_bodybytes   531365            2223.28   Response       body         bytes
+VBE.boot.default.pipe_hdrbytes      0                 0.00      Pipe           request      header         bytes
+VBE.boot.default.pipe_out           0                 0.00      Piped          bytes        to             backend
+VBE.boot.default.pipe_in            0                 0.00      Piped          bytes        from           backend
+VBE.boot.default.conn               0                 .         Concurrent     connections  to             backend
+VBE.boot.default.req                161               0.67      Backend        requests     sent
+```
+
 ## Magento Docs & Info Links
 
 ### community
@@ -2424,6 +3705,8 @@ php $WEBROOT/bin/magento maintenance:status
 ### Magento 2 CLI Commands
 
 * http://devdocs.magento.com/guides/v2.2/config-guide/cli/config-cli-subcommands-index.html
+* http://devdocs.magento.com/guides/v2.2/config-guide/cli/config-cli-subcommands-config-mgmt-set.html
+* http://devdocs.magento.com/guides/v2.2/config-guide/prod/config-reference-sens.html
 * https://www.cloudways.com/blog/custom-cli-command-magento-2/
 
 ### Magento 2 Extensions
