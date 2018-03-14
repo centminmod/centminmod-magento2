@@ -45,6 +45,85 @@ After install it is highly recommended to bookmark and read at least these 3 lin
 * [How to Boost Centmin Mod LEMP Stack Performance](https://centminmod.com/perf/)
 * [Guide To Learning About Centmin Mod](https://community.centminmod.com/threads/guide-to-learning-more-about-centmin-mod.10838/)
 
+Centmin Mod LEMP stack installer takes care of all possible PHP extension requirements for many web applications including, Wordpress, Xenforo, Invision Board, vBulletin, Piwik, and Magento.
+
+List of PHP extensions loaded with PHP 7.1.5 with lzf and lz4 added post initial install
+
+```
+php -m
+[PHP Modules]
+bcmath
+bz2
+calendar
+Core
+ctype
+curl
+date
+dom
+enchant
+exif
+filter
+ftp
+gd
+geoip
+gettext
+gmp
+hash
+iconv
+igbinary
+imagick
+imap
+intl
+json
+ldap
+libxml
+lz4
+lzf
+mailparse
+mbstring
+mcrypt
+memcache
+memcached
+mysqli
+mysqlnd
+openssl
+pcntl
+pcre
+PDO
+pdo_mysql
+pdo_sqlite
+Phar
+posix
+pspell
+readline
+redis
+Reflection
+session
+shmop
+SimpleXML
+snmp
+soap
+sockets
+SPL
+sqlite3
+standard
+sysvmsg
+sysvsem
+sysvshm
+tidy
+tokenizer
+xml
+xmlreader
+xmlrpc
+xmlwriter
+xsl
+Zend OPcache
+zip
+zlib
+
+[Zend Modules]
+Zend OPcache
+```
 
 ## Magento 2.2.2 Installation
 
@@ -3741,5 +3820,7 @@ php $WEBROOT/bin/magento maintenance:status
 
 ## Magento 2 Bugs
 
+* [Varnish related issues listed](https://github.com/magento/magento2/issues?page=4&q=varnish+sort%3Aupdated-desc)
 * https://github.com/magento/magento2/issues/11002
 * https://github.com/magento/magento2/issues/6401
+* https://github.com/magento/magento2/issues/9156
