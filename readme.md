@@ -2866,6 +2866,7 @@ create these 2 files
 
 contents of `/usr/local/nginx/conf/proxycache_map.conf` initially sets up Nginx HTTP/2 HTTPS to reverse proxy to Nginx non-HTTPS backend on port 8686 `server localhost:8686 weight=1` to confirm Nginx reverse proxy works first and has varnish cache backend commented out and disabled for now `server localhost:6081 weight=1`
 
+```
 upstream proxy_backend {
     zone upstream_dynamic 512k;
     keepalive 128;
@@ -2935,6 +2936,7 @@ split_clients "$remote_addr$remote_port" $split_ip {
     4%  127.0.0.25;
     *   127.0.0.26;
 }
+```
 
 contents of `/usr/local/nginx/conf/proxycache-includes.conf` as we will setup some micro caching too on Nginx HTTP/2 HTTPS reverse proxy for just TTLS = 3 seconds
 
