@@ -2358,7 +2358,7 @@ wget -O /etc/varnish/default.vcl https://github.com/centminmod/centminmod-magent
 sed -i 's|port = "8080";|port = "8686";|' /etc/varnish/default.vcl
 sed -i 's|/pub/health_check.php|/health_check.php|' /etc/varnish/default.vcl
 sed -i '/DAEMON_OPTS/d' /etc/varnish/varnish.params
-echo "DAEMON_OPTS=\"-p feature=+http2 -p thread_pools=2 -p thread_pool_add_delay=0.02 -p listen_depth=4096 -p lru_interval=2 -p cli_timeout=10 -p thread_pool_min=500 -p thread_pool_max=1500 -p thread_pool_timeout=300 -p tcp_fastopen=on -p http_resp_hdr_len=48000 -p workspace_backend=262144 -p workspace_client=262144 -p workspace_session=262144 -p workspace_thread=8192\"" >> /etc/varnish/varnish.params
+echo "DAEMON_OPTS=\"-p feature=+http2 -p thread_pools=2 -p thread_pool_add_delay=0.02 -p listen_depth=4096 -p lru_interval=2 -p cli_timeout=10 -p thread_pool_min=500 -p thread_pool_max=1500 -p thread_pool_timeout=300 -p tcp_fastopen=on -p http_resp_hdr_len=48000 -p workspace_backend=262144 -p workspace_client=262144 -p workspace_session=262144 -p workspace_thread=2048\"" >> /etc/varnish/varnish.params
 cat /etc/systemd/system/varnish.service.d/limit.conf
 cat /etc/varnish/varnish.params
 systemctl daemon-reload
@@ -3215,7 +3215,7 @@ vsm_space                  1M [bytes] (default)
 workspace_backend          0.25M [bytes]
 workspace_client           0.25M [bytes]
 workspace_session          0.25M [bytes]
-workspace_thread           8k [bytes]
+workspace_thread           2k [bytes] (default)
 ```
 
 ```
