@@ -3617,6 +3617,13 @@ VBE.boot.default.req                161               0.67      Backend        r
 ### magento caching
 
 * http://devdocs.magento.com/guides/v2.2/config-guide/redis/redis-pg-cache.html
+* http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish.html
+* http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish-configure.html
+* http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish-magento.html
+* http://devdocs.magento.com/guides/v2.2/config-guide/varnish/use-multiple-varnish-cache.html
+* http://devdocs.magento.com/guides/v2.2/config-guide/varnish/use-varnish-cache.html
+* http://devdocs.magento.com/guides/v2.2/config-guide/varnish/use-varnish-cache-how.html
+* http://devdocs.magento.com/guides/v2.2/config-guide/varnish/tshoot-varnish-503.html
 * https://github.com/colinmollenhour/Cm_Cache_Backend_Redis
 * https://github.com/colinmollenhour/magento-cache-benchmark
 
