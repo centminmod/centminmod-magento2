@@ -2310,7 +2310,7 @@ diff -u app/etc/env.php.redisset app/etc/env.php
 
 ## Magento 2 Varnish Cache
 
-Magento folks recommend that Varnish Cache be used for full paege caching instead of Redis full page caching as outlined at [Varnish Cache based full page caching](http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish.html). We'll need to configure Varnish Cache 5.2.x with HTTP/2 support proxying to a non-HTTPS `magento.domain.com` backend. For terminating HTTPS connections using Centmin Mod Nginx HTTP/2 HTTPS as reverse proxy in front of Varnish Cache as Varnish Cache can't fully handle HTTPS itself. The work flow looks like this:
+Magento folks recommend that Varnish Cache be used for full page caching instead of Redis full page caching as outlined at [Varnish Cache based full page caching](http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish.html). We'll need to configure Varnish Cache 5.2.x with HTTP/2 support proxying to a non-HTTPS `magento.domain.com` backend. For terminating HTTPS connections using Centmin Mod Nginx HTTP/2 HTTPS as reverse proxy in front of Varnish Cache as Varnish Cache can't fully handle HTTPS itself. The work flow looks like this:
 
 ```
 Visitor > Nginx HTTP/2 HTTPS Proxy > Varnish Cache HTTP/2 Enabled > Nginx non-HTTPS backend
