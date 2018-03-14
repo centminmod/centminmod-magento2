@@ -3589,6 +3589,20 @@ VBE.boot.default.conn               0                 .         Concurrent     c
 VBE.boot.default.req                161               0.67      Backend        requests     sent
 ```
 
+#### Varnish Cache Flushing
+
+To flush Magento full page cache within Varnish Cache command:
+
+```
+php $WEBROOT/bin/magento cache:flush full_page
+```
+
+```
+php $WEBROOT/bin/magento cache:flush full_page
+Flushed cache types:
+full_page
+```
+
 ## Magento Docs & Info Links
 
 ### community
@@ -3626,6 +3640,7 @@ VBE.boot.default.req                161               0.67      Backend        r
 * http://devdocs.magento.com/guides/v2.2/config-guide/varnish/tshoot-varnish-503.html
 * https://github.com/colinmollenhour/Cm_Cache_Backend_Redis
 * https://github.com/colinmollenhour/magento-cache-benchmark
+* https://support.hypernode.com/knowledgebase/varnish-on-magento2/
 
 ### magento search
 
