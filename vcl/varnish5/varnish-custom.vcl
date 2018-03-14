@@ -244,7 +244,8 @@ sub vcl_deliver {
     unset resp.http.Server;
     unset resp.http.X-Varnish;
     unset resp.http.Via;
-    unset resp.http.Link;
+    # https://github.com/magento/magento2/issues/8126
+    #unset resp.http.Link;
 }
 
 sub vcl_hit {
