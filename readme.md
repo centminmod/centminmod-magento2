@@ -3479,8 +3479,6 @@ http_max_hdr               64 [header lines] (default)
 http_range_support         on [bool] (default)
 http_resp_hdr_len          64k [bytes]
 http_resp_size             96k [bytes]
-http_resp_hdr_len          48000b [bytes]
-http_resp_size             32k [bytes] (default)
 idle_send_timeout          60.000 [seconds] (default)
 listen_depth               4096 [connections]
 lru_interval               2.000 [seconds] (default)
