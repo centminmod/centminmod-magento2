@@ -3189,7 +3189,7 @@ contents of `/usr/local/nginx/conf/proxycache_map.conf` initially sets up Nginx 
 ```
 upstream proxy_backend {
     zone upstream_dynamic 512k;
-    keepalive 128;
+    keepalive 256;
     #least_conn;
     # proxy to varnish cache backend
     #server localhost:6081 weight=1;
@@ -3199,6 +3199,7 @@ upstream proxy_backend {
     
 map $request_uri $mag_nocacheuri {
        default              0;
+    ~^/customer             1;
     ~^/register             1;
     ~^/login                1;
     ~^/validate-field       1;
