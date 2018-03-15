@@ -443,6 +443,9 @@ nv -d $vhostname -s lelive -u "ftpu$(pwgen -1cnys 31)"
 
 
 Change into `magento.domain.com` vhost directory one level above the usual web root at `public`, which is `/home/nginx/domains/$vhostname` and move and make a backup copy of the original web root as `public.orig` directory. Then use Composer to download the Magento 2.2.2 source code to a newly created `public` directory and set the appropriate user/group owner permissions on files, directories and the Magento binary.
+
+Update: Magento 2.2.3 is latest now so you would change `magento/project-community-edition=2.2.2` to `magento/project-community-edition=2.2.3` instead.
+
 ```
 # downloading magento 2.2 code via composer
 cd /home/nginx/domains/$vhostname
@@ -2189,7 +2192,7 @@ n98-magerun2 sys:info --skip-root-check
 | Root             | /home/nginx/domains/magento.domain.com/public |
 | Application Mode | production                                    |
 | Session          | redis                                         |
-| Crypt Key        | d45f000b87ce82b4f68d3fd0b1bc14b2              |
+| Crypt Key        | d45f000b87ce82******************              |
 | Install Date     | Sun, 11 Mar 2018 20:40:12 +0000               |
 | Cache Backend    | Cm_Cache_Backend_Redis                        |
 | Vendors          | Magento, MageHost, Dotdigitalgroup, Temando   |
