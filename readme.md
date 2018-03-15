@@ -3377,7 +3377,7 @@ So change and disable `server localhost:8686 weight=1` from
 ```
 upstream proxy_backend {
     zone upstream_dynamic 512k;
-    keepalive 128;
+    keepalive 256;
     #least_conn;
     # proxy to varnish cache backend
     #server localhost:6081 weight=1;
@@ -3391,7 +3391,7 @@ to using Varnish Cache server as backend via `server localhost:6081 weight=1`
 ```
 upstream proxy_backend {
     zone upstream_dynamic 512k;
-    keepalive 128;
+    keepalive 256;
     #least_conn;
     # proxy to varnish cache backend
     server localhost:6081 weight=1;
