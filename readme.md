@@ -5,6 +5,7 @@
 * [Introduction](https://github.com/centminmod/centminmod-magento2#introduction)
 * [Centmin Mod 123.09beta01 LEMP Stack Install](https://github.com/centminmod/centminmod-magento2#centmin-mod-12309beta01-lemp-stack-install)
 * [Magento 2.2.2 Installation](https://github.com/centminmod/centminmod-magento2#magento-222-installation)
+* [Magento 2 Upgrade](https://github.com/centminmod/centminmod-magento2#magento-2-upgrade)
 * [Magento 2 Page Speed Tests](https://github.com/centminmod/centminmod-magento2#magento-2-page-speed-tests)
 * [Magento 2 Redis Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-redis-benchmarks)
   * [Magento 2 File Based Caching Benchmarks](https://github.com/centminmod/centminmod-magento2#benchmarks-with-redis-caching-disabled)
@@ -1944,6 +1945,61 @@ Catalog Product Rule:                              Update by Schedule
 Catalog Search:                                    Update by Schedule
 ```
 
+static file location
+
+```
+ls -lah pub/static/frontend/Magento/luma/en_US/css/
+total 392K
+drwxr-sr-x  2 root nginx 4.0K Mar 14 08:09 .
+drwxr-sr-x 68 root nginx 4.0K Mar 14 08:09 ..
+-rw-r--r--  1 root nginx 5.7K Mar 14 08:09 email.css
+-rw-r--r--  1 root nginx 2.0K Mar 14 08:09 email-fonts.css
+-rw-r--r--  1 root nginx 8.8K Mar 14 08:09 email-inline.css
+-rw-r--r--  1 root nginx 1.2K Mar 14 08:09 print.css
+-rw-r--r--  1 root nginx  64K Mar 14 08:09 styles-l.css
+-rw-r--r--  1 root nginx 290K Mar 14 08:09 styles-m.css
+```
+
+```
+ls -lah pub/static/_cache/merged/
+total 2.4M
+drwxr-sr-x 2 nginx nginx 4.0K Mar 14 12:13 .
+drwxr-sr-x 3 nginx nginx 4.0K Mar 14 08:10 ..
+-rw-r--r-- 1 nginx nginx 297K Mar 14 08:10 9de8797d0c615276fc794278a0af8df2.css
+-rw-r--r-- 1 nginx nginx 647K Mar 14 12:13 9e492d36090b18d041a5555bf3f0fd98.css
+-rw-r--r-- 1 nginx nginx 131K Mar 14 11:25 a814ec60c7b703d594ceda92980506f6.js
+-rw-r--r-- 1 nginx nginx 104K Mar 14 08:10 c0b5661e7cfc4d3e29c8fc8495e4d56e.js
+-rw-r--r-- 1 nginx nginx  99K Mar 14 11:09 ddce5b0a41e6dbae4b6f458053932955.js
+-rw-r--r-- 1 nginx nginx 483K Mar 14 11:09 e6a662994948b56fa4f39e1f141aaed3.css
+-rw-r--r-- 1 nginx nginx 669K Mar 14 11:25 fe7035d3b7b90d9b17c968ffd74cf349.css
+```
+
+```
+ls -lah pub/static/frontend/Magento/luma/en_US/jquery            
+total 1.2M
+drwxr-sr-x  6 root nginx 4.0K Mar 14 08:08 .
+drwxr-sr-x 68 root nginx 4.0K Mar 14 08:09 ..
+drwxr-sr-x  5 root nginx 4.0K Mar 14 08:08 colorpicker
+drwxr-sr-x  4 root nginx 4.0K Mar 14 08:08 editableMultiselect
+drwxr-sr-x  6 root nginx 4.0K Mar 14 08:08 fileUploader
+-rw-r--r--  1 root nginx 1.5K Mar 14 08:08 jquery.ba-hashchange.min.js
+-rw-r--r--  1 root nginx 2.2K Mar 14 08:08 jquery.cookie.js
+-rw-r--r--  1 root nginx 5.7K Mar 14 08:08 jquery.details.js
+-rw-r--r--  1 root nginx 5.0K Mar 14 08:08 jquery.hoverIntent.js
+-rw-r--r--  1 root nginx 6.1K Mar 14 08:08 jquery.metadata.js
+-rw-r--r--  1 root nginx  17K Mar 14 08:08 jquery-migrate.js
+-rw-r--r--  1 root nginx  95K Mar 14 08:08 jquery.min.js
+-rw-r--r--  1 root nginx  24K Mar 14 08:08 jquery.mobile.custom.js
+-rw-r--r--  1 root nginx 1.4K Mar 14 08:08 jquery.parsequery.js
+-rw-r--r--  1 root nginx 6.9K Mar 14 08:08 jquery.storageapi.min.js
+-rw-r--r--  1 root nginx 7.8K Mar 14 08:08 jquery.tabs.js
+-rw-r--r--  1 root nginx 441K Mar 14 08:08 jquery-ui-1.9.2.js
+-rw-r--r--  1 root nginx 427K Mar 14 08:08 jquery-ui.js
+-rw-r--r--  1 root nginx  71K Mar 14 08:08 jquery-ui-timepicker-addon.js
+-rw-r--r--  1 root nginx  53K Mar 14 08:08 jquery.validate.js
+drwxr-sr-x  3 root nginx 4.0K Mar 14 08:08 jstree
+```
+
 ![](/screenshots/magento-222-admin-01.png)
 
 ![](/screenshots/magento-222-admin-01b.png)
@@ -1961,6 +2017,188 @@ Performance Dashboard Extension
 ![](/screenshots/magento-222-admin-07.png)
 
 ![](/screenshots/magento-222-admin-08.png)
+
+## Magento 2 Upgrade
+
+Upgrading Magento 2 can also be done via command line as per instructions outlined in [official documentation](http://devdocs.magento.com/guides/v2.2/comp-mgr/cli/cli-upgrade.html).
+
+### Upgrading to Magento 2.2.3 CE.
+
+Also added checks if Varnish & Redis cache are in play as per setup in this guide to restart Varnish Cache and flush Redis caches.
+
+```
+vhostname=magento.domain.com
+WEBROOT="/home/nginx/domains/${vhostname}/public"
+cd $WEBROOT
+php $WEBROOT/bin/magento maintenance:enable
+composer require magento/product-community-edition 2.2.3 --no-update
+composer update
+rm -rf $WEBROOT/var/cache/*
+rm -rf $WEBROOT/var/page_cache/*
+rm -rf $WEBROOT/generated/code/*
+php $WEBROOT/bin/magento setup:upgrade
+php $WEBROOT/bin/magento setup:static-content:deploy -f
+php $WEBROOT/bin/magento setup:di:compile
+#composer dump-autoload -o
+php $WEBROOT/bin/magento cache:clean
+php $WEBROOT/bin/magento cache:flush
+php $WEBROOT/bin/magento cache:status
+php $WEBROOT/bin/magento cache:disable
+php $WEBROOT/bin/magento cache:enable
+php $WEBROOT/bin/magento cache:flush full_page
+php $WEBROOT/bin/magento maintenance:disable
+php $WEBROOT/bin/magento deploy:mode:set production
+chown -R nginx:nginx "/home/nginx/domains/${vhostname}/public"
+service nginx restart
+if [ -f "$(which varnishadm)" ]; then service varnish restart; fi
+if [ -f "$(which redis-cli)" ]; then redis-cli -n 12 FLUSHALL; redis-cli -n 13 FLUSHALL; redis-cli -n 14 FLUSHALL; fi
+```
+
+specific commands' example output
+
+```
+composer update
+Do not run Composer as root/super user! See https://getcomposer.org/root for details
+Loading composer repositories with package information
+Updating dependencies (including require-dev)
+Package operations: 0 installs, 30 updates, 0 removals
+  - Updating tedivm/jshrink (v1.2.0 => v1.3.0): Loading from cache
+  - Updating magento/framework (101.0.2 => 101.0.3): Loading from cache
+  - Updating magento/module-config (101.0.2 => 101.0.3): Loading from cache
+  - Updating magento/module-backend (100.2.2 => 100.2.3): Loading from cache
+  - Updating magento/module-ui (101.0.2 => 101.0.3): Loading from cache
+  - Updating magento/module-variable (100.2.1 => 100.2.2): Loading from cache
+  - Updating magento/module-catalog (102.0.2 => 102.0.3): Loading from cache
+  - Updating magento/module-eav (101.0.1 => 101.0.2): Loading from cache
+  - Updating magento/module-customer (101.0.2 => 101.0.3): Loading from cache
+  - Updating magento/module-reports (100.2.2 => 100.2.3): Loading from cache
+  - Updating magento/module-tax (100.2.2 => 100.2.3): Loading from cache
+  - Updating magento/module-shipping (100.2.2 => 100.2.3): Loading from cache
+  - Updating magento/module-directory (100.2.1 => 100.2.2): Loading from cache
+  - Updating magento/module-theme (100.2.2 => 100.2.3): Loading from cache
+  - Updating magento/module-cms (102.0.2 => 102.0.3): Loading from cache
+  - Updating magento/module-checkout (100.2.2 => 100.2.3): Loading from cache
+  - Updating magento/module-downloadable (100.2.1 => 100.2.2): Loading from cache
+  - Updating magento/module-newsletter (100.2.1 => 100.2.2): Loading from cache
+  - Updating magento/module-review (100.2.2 => 100.2.3): Loading from cache
+  - Updating magento/module-import-export (100.2.2 => 100.2.3): Loading from cache
+  - Updating magento/module-backup (100.2.1 => 100.2.2): Loading from cache
+  - Updating magento/module-usps (100.2.0 => 100.2.1): Loading from cache
+  - Updating magento/module-configurable-product (100.2.2 => 100.2.3): Loading from cache
+  - Updating braintree/braintree_php (3.25.0 => 3.27.0): Loading from cache
+  - Updating magento/module-braintree (100.2.2 => 100.2.3): Loading from cache
+  - Updating ramsey/uuid (3.7.1 => 3.7.3): Loading from cache
+  - Updating tubalmartin/cssmin (v4.1.0 => v4.1.1): Loading from cache
+  - Updating colinmollenhour/cache-backend-redis (1.10.2 => 1.10.4): Loading from cache
+  - Updating magento/magento2-base (2.2.2 => 2.2.3): Loading from cache
+Package sjparkinson/static-review is abandoned, you should avoid using it. Use phpro/grumphp instead.
+Writing lock file
+Generating autoload files
+```
+
+```
+php $WEBROOT/bin/magento setup:static-content:deploy -f
+
+Deploy using quick strategy
+frontend/Magento/blank/en_US            2108/2108           ============================ 100% %  13 secs             
+adminhtml/Magento/backend/en_US         2105/2105           ============================ 100% %  15 secs             
+frontend/Magento/luma/en_US             2124/2124           ============================ 100% %  15 secs
+
+Execution time: 65.690301895142
+```
+
+```
+php $WEBROOT/bin/magento setup:di:compile
+Compilation was started.
+Interception cache generation... 7/7 [============================] 100% 1 min 196.0 MiB
+Generated code and dependency injection configuration successfully.
+```
+
+### Verify Magento Upgrade
+
+Unfortunately, running into a problem in that all reported Magento 2 caches are reported as disabled in admin area GUI but command line says they're all enabled (set to 1) ? After a few cache flushes and switching between production and developer mode, and finally back to production mode, then the admin are GUI showed all caches as enabled ?
+
+```
+vhostname=magento.domain.com
+WEBROOT="/home/nginx/domains/${vhostname}/public"
+cd $WEBROOT
+php $WEBROOT/bin/magento indexer:show-mode
+php $WEBROOT/bin/magento deploy:mode:show
+n98-magerun2 cache:list --skip-root-check
+n98-magerun2 sys:check --skip-root-check
+n98-magerun2 sys:info --skip-root-check
+```
+
+```
+n98-magerun2 cache:list --skip-root-check
+
+                       
+  Magento Cache Types  
+                       
+
++------------------------+--------------------------------+---------+
+| Name                   | Type                           | Enabled |
++------------------------+--------------------------------+---------+
+| config                 | Configuration                  | 1       |
+| layout                 | Layouts                        | 1       |
+| block_html             | Blocks HTML output             | 1       |
+| collections            | Collections Data               | 1       |
+| reflection             | Reflection Data                | 1       |
+| db_ddl                 | Database DDL operations        | 1       |
+| eav                    | EAV types and attributes       | 1       |
+| customer_notification  | Customer Notification          | 1       |
+| config_integration     | Integrations Configuration     | 1       |
+| config_integration_api | Integrations API Configuration | 1       |
+| full_page              | Page Cache                     | 1       |
+| translate              | Translations                   | 1       |
+| config_webservice      | Web Services Configuration     | 1       |
++------------------------+--------------------------------+---------+
+```
+
+```
+n98-magerun2 cache:status --skip-root-check
+Current status:
+                        config: 1
+                        layout: 1
+                    block_html: 1
+                   collections: 1
+                    reflection: 1
+                        db_ddl: 1
+                           eav: 1
+         customer_notification: 1
+            config_integration: 1
+        config_integration_api: 1
+                     full_page: 1
+                     translate: 1
+             config_webservice: 1
+```
+
+```
+n98-magerun2 sys:info --skip-root-check
+
+                              
+  Magento System Information  
+                              
+
++------------------+-----------------------------------------------+
+| name             | value                                         |
++------------------+-----------------------------------------------+
+| Name             | Magento                                       |
+| Version          | 2.2.3                                         |
+| Edition          | Community                                     |
+| Root             | /home/nginx/domains/magento.domain.com/public |
+| Application Mode | production                                    |
+| Session          | redis                                         |
+| Crypt Key        | d45f000b87ce82b4f68d3fd0b1bc14b2              |
+| Install Date     | Sun, 11 Mar 2018 20:40:12 +0000               |
+| Cache Backend    | Cm_Cache_Backend_Redis                        |
+| Vendors          | Magento, MageHost, Dotdigitalgroup, Temando   |
+| Attribute Count  | 134                                           |
+| Customer Count   | 0                                             |
+| Category Count   | 2                                             |
+| Product Count    | 0                                             |
++------------------+-----------------------------------------------+
+```
 
 ## Magento 2 Page Speed Tests
 
@@ -3693,6 +3931,9 @@ full_page
 ### magento 2.2 docs
 
 * http://devdocs.magento.com/guides/v2.2/release-notes/ReleaseNotes2.2.2CE.html
+* http://devdocs.magento.com/guides/v2.2/comp-mgr/cli/cli-upgrade.html
+* http://devdocs.magento.com/guides/v2.2/comp-mgr/bk-compman-upgrade-guide.html
+* http://devdocs.magento.com/guides/v2.2/comp-mgr/trouble/cman/maint-mode.html
 * http://devdocs.magento.com/guides/v2.2/config-guide/bootstrap/magento-modes.html
 * http://devdocs.magento.com/guides/v2.2/config-guide/cli/config-cli-subcommands-mode.html
 * http://devdocs.magento.com/guides/v2.2/install-gde/install-quick-ref.html
