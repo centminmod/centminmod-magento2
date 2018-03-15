@@ -13,7 +13,7 @@ backend default {
     .between_bytes_timeout = 3s;
     .probe = {
         .url = "/pub/health_check.php";
-        .timeout = 2s;
+        .timeout = 3s;
         .interval = 5s;
         .window = 10;
         .threshold = 5;
