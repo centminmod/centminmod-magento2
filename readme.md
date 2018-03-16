@@ -2455,7 +2455,39 @@ Set session-save to files based
 php $WEBROOT/bin/magento setup:config:set --session-save=files
 ```
 
-manually remove app/etc/env.php entries for Redis backend and full page caching
+Then manually remove `app/etc/env.php` entries for Redis backend and full page caching
+
+```
+  'cache' => 
+  array (
+    'frontend' => 
+    array (
+      'default' => 
+      array (
+        'backend' => 'Cm_Cache_Backend_Redis',
+        'backend_options' => 
+        array (
+          'server' => '127.0.0.1',
+          'database' => '12',
+          'port' => '6379',
+        ),
+      ),
+      'page_cache' => 
+      array (
+        'backend' => 'Cm_Cache_Backend_Redis',
+        'backend_options' => 
+        array (
+          'server' => '127.0.0.1',
+          'database' => '13',
+          'port' => '6379',
+          'compress_data' => 'lz4',
+        ),
+      ),
+    ),
+  ),
+```
+
+Then run
 
 ```
 php $WEBROOT/bin/magento cache:flush
