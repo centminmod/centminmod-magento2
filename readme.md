@@ -3355,6 +3355,47 @@ Server: nginx centminmod
 X-Powered-By: centminmod
 ```
 
+Confirming HTTP/2 HTTPS works with updated curl version = `HTTP/2 200`
+
+```
+curl -V
+curl 7.59.0-DEV (x86_64-pc-linux-gnu) libcurl/7.59.0-DEV OpenSSL/1.1.1 zlib/1.2.11 libpsl/0.18.0 (+libidn2/2.0.2) libssh2/1.8.0 nghttp2/1.32.0-DEV
+Release-Date: [unreleased]
+Protocols: dict file ftp ftps gopher http https imap imaps ldap ldaps pop3 pop3s rtsp scp sftp smb smbs smtp smtps telnet tftp 
+Features: AsynchDNS IPv6 Largefile NTLM NTLM_WB SSL libz TLS-SRP HTTP2 UnixSockets HTTPS-proxy PSL 
+```
+
+```
+curl -Ik https://magento.domain.com
+HTTP/2 200 
+date: Fri, 16 Mar 2018 13:38:56 GMT
+content-type: text/html; charset=UTF-8
+vary: Accept-Encoding
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+x-frame-options: SAMEORIGIN
+x-processing-time: 0.200
+x-request-id: 5e9addeb8382a7e38abdea493e52c9d8
+x-ua-compatible: IE=Edge,chrome=1
+link: <https://magento.domain.com/>; rel="canonical"
+pragma: no-cache
+expires: -1
+cache-control: no-store, no-cache, must-revalidate, max-age=0
+server: nginx centminmod
+x-powered-by: centminmod
+x-cache-status: HIT
+```
+
+HTTP/2 ALPN h2
+
+```
+curl -Ikv https://magento.domain.com 2>&1 | egrep 'ALPN|SSL con
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256
+* ALPN, server accepted to use h2
+```
+
 ### Step 6. Switch Magento To Use Varnish Cache
 
 As per [Magento 2.2.2 documentation](http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish-magento.html), Varnish Cache needs to be set up for Magento full page caching.
