@@ -3944,7 +3944,7 @@ VBE.boot.default.req                161               0.67      Backend        r
 
 In this configuration with Varnish Cache, you will still receive load on Nginx web server as it's in front of Varnish Cache for terminating - handling HTTPS SSL connections which are then passed over HTTP/2 as clear plain text to Varnish Cache which either retrieves the visitor's request from it's Varnish Cache store or from the non-HTTPS Nginx backend we setup on port 8686.
 
-Below are Top stats during wrk-cmm load testing benchmarks of a longer duration at 120 seconds which confirm this - that Nginx still receives the bulk of the work load.
+Below are Top stats during wrk-cmm load testing benchmarks of a longer duration at 120 seconds which confirm this - that Nginx still receives the bulk of the work load. There will be at least 2 Nginx processes as wrk-cmm load tester is running with 2 threads.
 
 ```
 top -c
