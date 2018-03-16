@@ -10,7 +10,7 @@
 * [Magento 2 Redis Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-redis-benchmarks)
   * [Magento 2 File Based Caching Benchmarks](https://github.com/centminmod/centminmod-magento2#benchmarks-with-redis-caching-disabled)
 * [Magento 2 Varnish Cache Config & Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-varnish-cache)
- * [Varnish Cache Benchmark Test Results](https://github.com/centminmod/centminmod-magento2#varnish-cache-benchmark-test-results)
+  * [Varnish Cache Benchmark Test Results](https://github.com/centminmod/centminmod-magento2#varnish-cache-benchmark-test-results)
 * [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
 * [Magento 2 Bugs](https://github.com/centminmod/centminmod-magento2#magento-2-bugs)
 
