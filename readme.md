@@ -10,6 +10,7 @@
 * [Magento 2 Redis Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-redis-benchmarks)
   * [Magento 2 File Based Caching Benchmarks](https://github.com/centminmod/centminmod-magento2#benchmarks-with-redis-caching-disabled)
 * [Magento 2 Varnish Cache Config & Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-varnish-cache)
+ * [Varnish Cache Benchmark Test Results](https://github.com/centminmod/centminmod-magento2#varnish-cache-benchmark-test-results)
 * [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
 * [Magento 2 Bugs](https://github.com/centminmod/centminmod-magento2#magento-2-bugs)
 
@@ -3635,6 +3636,8 @@ Accept-Ranges: bytes
 Connection: keep-alive
 ```
 
+#### Varnish Cache Benchmark Test Results
+
 Quick benchmarks with Redis caching for sessions and backend and Varnish Cache for full page caching and a huge boost in performance compared to using Redis caching for full page caching jumping from 65-68 requests/sec and TTFB thread latency max at between 134-158ms.
 
 first run without cache warm up with 569 requests/s and TTFB thread latency max at 581ms
@@ -3993,7 +3996,7 @@ KiB Swap:  4194300 total,  4193232 free,     1068 used.  2597960 avail Mem
  8540 root      20   0  157784   2188   1472 R   0.3  0.1   0:00.09 top  
 ```
 
-In this configuration, PHP will always have at least 1 active process due to the Varnish Cache backend health check probe we defined at `/home/nginx/domains/magento.domain.com/public/pub/health_check.php` in Magento 2 generated Varnish Cache `/etc/varnish/default.vcl` config file.
+In this configuration, PHP will always have at least 1 almost active process due to the Varnish Cache backend health check probe we defined at `/home/nginx/domains/magento.domain.com/public/pub/health_check.php` in Magento 2 generated Varnish Cache `/etc/varnish/default.vcl` config file.
 
 
 In `/etc/varnish/default.vcl`
