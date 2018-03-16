@@ -136,7 +136,7 @@ Raise PHP-FPM listen.backlog
 listen.backlog = 8096
 ```
 
-change from `ondemand` to `static` or `dynamic` PHP-FPM process manager in which case tuning `pm.max_children` is left up to you to tune.
+change from `ondemand` to `static` or `dynamic` PHP-FPM process manager in which case tuning `pm.max_children` is left up to you to tune. Note, Centmin Mod LEMP stack install auto tunes these default values on a server based on detected system resources like cpu count and memory, so below settings may not be the same on your Centmin Mod LEMP based server as you may have different server hardware resources and hardware specs.
 
 ```
 ;pm = ondemand
