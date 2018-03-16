@@ -4028,7 +4028,7 @@ Also utilising PHP will be the Magento 2 cronjobs we scheduled earlier.
 #~ MAGENTO END e62ad2add6593b3556cf71a699c00***
 ```
 
-[Centmin Mod PHP-FPM status output](centminmod.com/phpfpm.html#browserstatus) in full. Notice
+[Centmin Mod PHP-FPM status output](centminmod.com/phpfpm.html#browserstatus) in full. Notice the request URI for `/health_check.php`
 
 ```
 curl -s localhost/phpstatus?full
