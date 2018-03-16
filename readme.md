@@ -19,7 +19,7 @@ This Magento 2.2.2 installation guide is written by George Liu (eva2000) and is 
 
 **Disclaimer:** 
 
-I have never used Magento before so this is first attempt at installing Magento 2.2.2 after a quick read of the official Magento 2.2.2 documentation and Magento related info links outlined below in [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links) section. I haven't gone beyond the initial Magento installation, so have no experience with managing and administrating Magento 2.2 application nor have I have any experience with Magento themes etc. It's purely a first time attempt outline for Magento 2.2.2. Hence, why I decided to setup this Magento install guide on a Github repository instead of the [official Centmin Mod Community forums](https://community.centminmod.com/) so I can accept contributions and corrections to the below guide via Git pull requests.
+I have never used Magento before so this is first attempt at installing Magento 2.2.2 after a quick read of the official Magento 2.2.2 documentation and Magento related info links outlined below in [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links) section. I haven't gone beyond the initial Magento installation, so have no experience with managing and administrating Magento 2.2 application nor have I have any experience with Magento themes etc. It's purely a first time attempt outline for Magento 2.2.2. Hence, why I decided to setup this Magento install guide on a Github repository instead of the [official Centmin Mod Community forums](https://community.centminmod.com/) so I can accept contributions and corrections to the below guide via Git pull requests. Thus this write up guide will undergo revisions over time.
 
 All below installation steps assume you have thoroughly read those listed [official Magento 2.2.2 documentation and links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links). So if you do not understand any of the SSH commands used, start reading the listed documentation and links below.
 
@@ -124,6 +124,29 @@ zlib
 
 [Zend Modules]
 Zend OPcache
+```
+
+After install, you may want to tweak your PHP-FPM primary main pool settings in `/usr/local/etc/php-fpm.conf`
+
+If you're on non-OpenVZ based server with ability to run system at TCP /etc/sysctl.conf level, then Centmin Mod LEMP stack installer would have automatically optimised your system at TCP level. So you will be able to make changes like below:
+
+Raise PHP-FPM listen.backlog
+
+```
+listen.backlog = 8096
+```
+
+change from `ondemand` to `static` PHP-FPM process manager in which case tuning `pm.max_children` is left up to you do to.
+
+```
+;pm = ondemand
+pm = static
+pm.max_children = 8
+; Default Value: min_spare_servers + (max_spare_servers - min_spare_servers) / 2
+pm.start_servers = 8
+pm.min_spare_servers = 4
+pm.max_spare_servers = 12
+pm.max_requests = 1000
 ```
 
 ## Magento 2.2.2 Installation
@@ -3907,6 +3930,217 @@ VBE.boot.default.pipe_in            0                 0.00      Piped          b
 VBE.boot.default.conn               0                 .         Concurrent     connections  to             backend
 VBE.boot.default.req                161               0.67      Backend        requests     sent
 ```
+
+In this configuration with Varnish Cache, you will still receive load on Nginx web server as it's in front of Varnish Cache for terminating - handling HTTPS SSL connections which are then passed over HTTP/2 as clear plain text to Varnish Cache which either retrieves the visitor's request from it's Varnish Cache store or from the non-HTTPS Nginx backend we setup on port 8686.
+
+Below are Top stats during wrk-cmm load testing benchmarks of a longer duration at 120 seconds which confirm this - that Nginx still receives the bulk of the work load.
+
+```
+top -c
+top - 09:25:50 up 3 days, 36 min,  2 users,  load average: 2.45, 1.95, 1.36
+Tasks: 114 total,   3 running, 111 sleeping,   0 stopped,   0 zombie
+%Cpu0  : 50.3 us, 12.7 sy,  0.0 ni, 34.2 id,  0.0 wa,  0.0 hi,  2.4 si,  0.3 st
+%Cpu1  : 44.2 us,  9.9 sy,  0.0 ni, 43.2 id,  0.0 wa,  0.0 hi,  2.4 si,  0.3 st
+%Cpu2  : 44.4 us, 11.9 sy,  0.0 ni, 41.6 id,  0.0 wa,  0.0 hi,  1.7 si,  0.3 st
+%Cpu3  : 20.2 us, 13.2 sy,  0.0 ni, 65.5 id,  0.0 wa,  0.0 hi,  0.7 si,  0.3 st
+KiB Mem :  3881428 total,   384332 free,   703628 used,  2793468 buff/cache
+KiB Swap:  4194300 total,  4193232 free,     1068 used.  2597960 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                     
+ 1600 nginx     10 -10  461340  44740   2312 S  73.1  1.2   1:14.43 nginx                                                       
+ 1599 nginx     10 -10  465436  44832   2384 R  62.1  1.2   1:24.64 nginx                                                       
+ 8260 root      20   0  307532   3440   2360 S  49.8  0.1   0:55.48 wrk-cmm                                                     
+ 1718 nginx     20   0  348612  38012   3636 S  11.6  1.0   4:22.14 amplify-agent                                               
+ 7715 nginx     20   0  916364  24888  13992 S   1.7  0.6   0:00.85 php-fpm                                                     
+  771 root      20   0  550532  31332  17076 S   0.7  0.8  12:14.86 dockerd                                                     
+ 1127 mysql     20   0 1116544 304360  12460 S   0.7  7.8  30:28.38 mysqld                                                      
+ 1597 nginx     10 -10  461340  44668   2332 S   0.7  1.2   1:26.91 nginx                                                       
+ 8540 root      20   0  157784   2188   1472 R   0.3  0.1   0:00.09 top  
+```
+
+In this configuration, PHP will always have at least 1 active process due to the Varnish Cache backend health check probe we defined at `/home/nginx/domains/magento.domain.com/public/pub/health_check.php` in Magento 2 generated Varnish Cache `/etc/varnish/default.vcl` config file.
+
+
+In `/etc/varnish/default.vcl`
+
+```
+backend default {
+    .host = "localhost";
+    .port = "8686";
+    .first_byte_timeout = 600s;
+    .connect_timeout = 5s;
+    .between_bytes_timeout = 3s;
+    .probe = {
+        .url = "/health_check.php";
+        .timeout = 3s;
+        .interval = 5s;
+        .window = 10;
+        .threshold = 5;
+   }
+}
+```
+
+Also utilising PHP will be the Magento 2 cronjobs we scheduled earlier.
+
+```
+#~ MAGENTO START e62ad2add6593b3556cf71a699c00***
+* * * * * /usr/local/bin/php /home/nginx/domains/magento.domain.com/public/bin/magento cron:run 2>&1 | grep -v "Ran jobs by schedule" >> /home/nginx/domains/magento.domain.com/public/var/log/magento.cron.log
+* * * * * /usr/local/bin/php /home/nginx/domains/magento.domain.com/public/update/cron.php >> /home/nginx/domains/magento.domain.com/public/var/log/update.cron.log
+* * * * * /usr/local/bin/php /home/nginx/domains/magento.domain.com/public/bin/magento setup:cron:run >> /home/nginx/domains/magento.domain.com/public/var/log/setup.cron.log
+#~ MAGENTO END e62ad2add6593b3556cf71a699c00***
+```
+
+[Centmin Mod PHP-FPM status output](centminmod.com/phpfpm.html#browserstatus) in full. Notice
+
+```
+curl -s localhost/phpstatus?full
+pool:                 www
+process manager:      static
+start time:           15/Mar/2018:14:44:41 +0000
+start since:          67533
+accepted conn:        16139
+listen queue:         0
+max listen queue:     1
+listen queue len:     8096
+idle processes:       7
+active processes:     1
+total processes:      8
+max active processes: 3
+max children reached: 0
+slow requests:        0
+
+************************
+pid:                  7650
+state:                Running
+start time:           16/Mar/2018:09:20:35 +0000
+start since:          579
+requests:             18
+request duration:     1513
+request method:       GET
+request URI:          /phpstatus?full
+content length:       0
+user:                 -
+script:               -
+last request cpu:     0.00
+last request memory:  0
+
+************************
+pid:                  7648
+state:                Idle
+start time:           16/Mar/2018:09:20:30 +0000
+start since:          584
+requests:             18
+request duration:     1100
+request method:       GET
+request URI:          /phpstatus
+content length:       0
+user:                 -
+script:               -
+last request cpu:     0.00
+last request memory:  2097152
+
+************************
+pid:                  7663
+state:                Idle
+start time:           16/Mar/2018:09:20:40 +0000
+start since:          574
+requests:             17
+request duration:     30593
+request method:       GET
+request URI:          /health_check.php
+content length:       0
+user:                 -
+script:               /home/nginx/domains/magento.domain.com/public/pub/health_check.php
+last request cpu:     98.06
+last request memory:  4194304
+
+************************
+pid:                  7692
+state:                Idle
+start time:           16/Mar/2018:09:20:50 +0000
+start since:          564
+requests:             17
+request duration:     31242
+request method:       GET
+request URI:          /health_check.php
+content length:       0
+user:                 -
+script:               /home/nginx/domains/magento.domain.com/public/pub/health_check.php
+last request cpu:     96.02
+last request memory:  4194304
+
+************************
+pid:                  7693
+state:                Idle
+start time:           16/Mar/2018:09:20:50 +0000
+start since:          564
+requests:             17
+request duration:     31092
+request method:       GET
+request URI:          /health_check.php
+content length:       0
+user:                 -
+script:               /home/nginx/domains/magento.domain.com/public/pub/health_check.php
+last request cpu:     96.49
+last request memory:  4194304
+
+************************
+pid:                  7715
+state:                Idle
+start time:           16/Mar/2018:09:20:55 +0000
+start since:          559
+requests:             17
+request duration:     57387
+request method:       GET
+request URI:          /health_check.php
+content length:       0
+user:                 -
+script:               /home/nginx/domains/magento.domain.com/public/pub/health_check.php
+last request cpu:     69.70
+last request memory:  4194304
+
+************************
+pid:                  7677
+state:                Idle
+start time:           16/Mar/2018:09:20:45 +0000
+start since:          569
+requests:             17
+request duration:     352
+request method:       GET
+request URI:          /phpstatus
+content length:       0
+user:                 -
+script:               -
+last request cpu:     0.00
+last request memory:  2097152
+
+************************
+pid:                  7644
+state:                Idle
+start time:           16/Mar/2018:09:20:30 +0000
+start since:          584
+requests:             18
+request duration:     159976
+request method:       GET
+request URI:          /health_check.php
+content length:       0
+user:                 -
+script:               /home/nginx/domains/magento.domain.com/public/pub/health_check.php
+last request cpu:     50.01
+last request memory:  4194304
+```
+
+Nginx requests/s reported in [Nginx Amplify monitoring](https://community.centminmod.com/threads/how-to-configure-php-fpm-status-monitoring-with-nixstats-nginx-amplify.14024/).
+
+![](/screenshots/nginx-amplify-nginx-160318-01.png)
+
+Nginx traffic received
+
+![](/screenshots/nginx-amplify-nginx-160318-02.png)
+
+Load average
+
+![](/screenshots/nginx-amplify-nginx-160318-03.png)
 
 #### Varnish Cache Flushing
 
