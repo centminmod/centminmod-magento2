@@ -34,7 +34,7 @@ All below installation steps assume you have thoroughly read those listed [offic
 
 ## Centmin Mod 123.09beta01 LEMP Stack Install
 
-First you need to install Centmin Mod 123.09beta01 LEMP stack on a fresh virgin CentOS 7.4 64bit server using the `betainstaller71.sh` installer which will install Nginx 1.13 branch with MariaDB 10.1.31 MySQL and latest version of PHP 7.1.x branch as PHP-FPM which as of this moment is PHP 7.1.15. Details are [here](https://community.centminmod.com/threads/centmin-mod-09-beta-branch-testing.4128/).
+First you need to install Centmin Mod 123.09beta01 LEMP stack on a fresh virgin CentOS 7.4 64bit server using the `betainstaller71.sh` installer which will install Nginx 1.13 branch with MariaDB 10.1.31 MySQL and latest version of PHP 7.1.x branch as PHP-FPM which as of this moment is PHP 7.1.15. Details are [here](https://community.centminmod.com/threads/centmin-mod-09-beta-branch-testing.4128/). For CentOS users, you want to make sure you're using latest CentOS 7.4 or higher version operating system as the [version of Git and Curl](https://community.centminmod.com/threads/github-com-drops-tlsv1-1-tlsv1-0-support-update-centos-6-9-or-7-4.14206/) are latest versions used to support TLS v1.2 which is required due to [Github.com deprecating TLSv1.0 and TLSv1.1 and Paypal deprecating TLSv1.0](https://community.centminmod.com/threads/github-com-drops-tlsv1-1-tlsv1-0-support-update-centos-6-9-or-7-4.14206/). Magento component repository also [requires TLSv1.1 or newer too](http://devdocs.magento.com/guides/v2.2/install-gde/system-requirements2.html).
 
 As root user in SSH session run the installer via curl:
 
