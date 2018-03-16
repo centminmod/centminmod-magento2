@@ -136,7 +136,7 @@ Raise PHP-FPM listen.backlog
 listen.backlog = 8096
 ```
 
-change from `ondemand` to `static` PHP-FPM process manager in which case tuning `pm.max_children` is left up to you do to.
+change from `ondemand` to `static` or `dynamic` PHP-FPM process manager in which case tuning `pm.max_children` is left up to you to tune.
 
 ```
 ;pm = ondemand
@@ -147,6 +147,41 @@ pm.start_servers = 8
 pm.min_spare_servers = 4
 pm.max_spare_servers = 12
 pm.max_requests = 1000
+```
+
+Official php.net documentation [here](https://secure.php.net/manual/en/install.fpm.configuration.php).
+
+```
+pm string
+Choose how the process manager will control the number of child processes. Possible values: static, ondemand, dynamic. This option is mandatory.
+
+static - the number of child processes is fixed (pm.max_children).
+
+ondemand - the processes spawn on demand (when requested, as opposed to dynamic, where pm.start_servers are started when the service is started.
+
+dynamic - the number of child processes is set dynamically based on the following directives: pm.max_children, pm.start_servers, pm.min_spare_servers, pm.max_spare_servers.
+```
+
+```
+pm.max_children int
+The number of child processes to be created when pm is set to static and the maximum number of child processes to be created when pm is set to dynamic. This option is mandatory.
+
+This option sets the limit on the number of simultaneous requests that will be served. Equivalent to the ApacheMaxClients directive with mpm_prefork and to the PHP_FCGI_CHILDREN environment variable in the original PHP FastCGI.
+
+pm.start_servers int
+The number of child processes created on startup. Used only when pm is set to dynamic. Default Value: min_spare_servers + (max_spare_servers - min_spare_servers) / 2.
+
+pm.min_spare_servers int
+The desired minimum number of idle server processes. Used only when pm is set to dynamic. Also mandatory in this case.
+
+pm.max_spare_servers int
+The desired maximum number of idle server processes. Used only when pm is set to dynamic. Also mandatory in this case.
+
+pm.process_idle_timeout mixed
+The number of seconds after which an idle process will be killed. Used only when pm is set to ondemand. Available units: s(econds)(default), m(inutes), h(ours), or d(ays). Default value: 10s.
+
+pm.max_requests int
+The number of requests each child process should execute before respawning. This can be useful to work around memory leaks in 3rd party libraries. For endless request processing specify '0'. Equivalent to PHP_FCGI_MAX_REQUESTS. Default value: 0.
 ```
 
 ## Magento 2.2.2 Installation
