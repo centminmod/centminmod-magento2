@@ -11,6 +11,8 @@
   * [Magento 2 File Based Caching Benchmarks](https://github.com/centminmod/centminmod-magento2#benchmarks-with-redis-caching-disabled)
 * [Magento 2 Varnish Cache Config & Benchmarks](https://github.com/centminmod/centminmod-magento2#magento-2-varnish-cache)
   * [Varnish Cache Benchmark Test Results](https://github.com/centminmod/centminmod-magento2#varnish-cache-benchmark-test-results)
+* [Magento 2 Backups](https://github.com/centminmod/centminmod-magento2#magento-2-backups)
+* [Magento 2 Install And Remove Sample Data](https://github.com/centminmod/centminmod-magento2#magento-2-install-and-remove-sample-data)
 * [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links)
 * [Magento 2 Bugs](https://github.com/centminmod/centminmod-magento2#magento-2-bugs)
 
@@ -20,7 +22,7 @@ This Magento 2.2.2 installation guide is written by George Liu (eva2000) and is 
 
 **Disclaimer:** 
 
-I have never used Magento before so this is first attempt at installing Magento 2.2.2 after a quick read of the official Magento 2.2.2 documentation and Magento related info links outlined below in [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links) section. I haven't gone beyond the initial Magento installation, so have no experience with managing and administrating Magento 2.2 application nor have I have any experience with Magento themes etc. It's purely a first time attempt outline for Magento 2.2.2. Hence, why I decided to setup this Magento install guide on a Github repository instead of the [official Centmin Mod Community forums](https://community.centminmod.com/) so I can accept contributions and corrections to the below guide via Git pull requests. Thus this write up guide will undergo revisions over time.
+I have never used Magento before so this is first attempt at installing Magento 2.2.2 after a quick read of the official Magento 2.2.2 documentation and Magento related info links outlined below in [Magento Docs & Info Links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links) section. I haven't gone beyond the initial Magento installation, so have no experience with managing and administrating Magento 2.2 application nor have I have any experience with Magento themes etc. It's purely a first time attempt outline for Magento 2.2.2. Hence, why I decided to setup this Magento install guide on a Github repository instead of the [official Centmin Mod Community forums](https://community.centminmod.com/) so I can accept contributions and corrections to the below guide via Git pull requests. This is how I usually learn - lots of reading and practice. Just this time I am documenting publicly. Thus this write up guide will undergo revisions over time.
 
 All below installation steps assume you have thoroughly read those listed [official Magento 2.2.2 documentation and links](https://github.com/centminmod/centminmod-magento2#magento-docs--info-links). So if you do not understand any of the SSH commands used, start reading the listed documentation and links below.
 
@@ -509,7 +511,7 @@ Update: Magento 2.2.3 is latest now so you would change `magento/project-communi
 # downloading magento 2.2 code via composer
 cd /home/nginx/domains/$vhostname
 mv public public.orig
-time composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition=2.2.2 public
+time composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition=2.2.3 public
 time composer require predis/predis
 #time composer require ext-phpiredis
 cd public
@@ -758,38 +760,9 @@ chown -R nginx:nginx "/home/nginx/domains/${vhostname}/public"
 ```
 
 
-Optional sample data you can install but you need to switch to `developer` mode first to install the sample data. Don't install sample data if you intend to run a production live web site.
+You can also install [Magento 2 sample data](https://github.com/centminmod/centminmod-magento2#magento-2-install-and-remove-sample-data) but you need to switch to `developer` mode first to install the sample data. Don't install sample data if you intend to run a production live web site.
 
-```
-# install sample data
-# http://devdocs.magento.com/guides/v2.2/install-gde/trouble/tshoot_sample-data.html#trouble-samp-prod
-
-# dev mode
-php $WEBROOT/bin/magento deploy:mode:show
-php $WEBROOT/bin/magento deploy:mode:set developer
-rm -rf generated/code/* generated/metadata/*
-php $WEBROOT/bin/magento cache:status
-php $WEBROOT/bin/magento cache:flush
-php $WEBROOT/bin/magento indexer:reindex cataloginventory_stock
-php $WEBROOT/bin/magento indexer:reindex
-php $WEBROOT/bin/magento cache:enable
-redis-cli -n 12 FLUSHALL
-redis-cli -n 13 FLUSHALL
-redis-cli -n 14 FLUSHALL
-php $WEBROOT/bin/magento sampledata:deploy
-php $WEBROOT/bin/magento setup:upgrade
-
-# optimisations
-n98-magerun2 config:set dev/js/merge_files 0
-n98-magerun2 config:set dev/css/merge_css_files 0
-php $WEBROOT/bin/magento setup:static-content:deploy
-php $WEBROOT/bin/magento setup:di:compile
-composer dump-autoload -o
-# ensure correct Centmin Mod Nginx permissions
-chown -R nginx:nginx "/home/nginx/domains/${vhostname}/public"
-```
-
-Magento 2 logrotate configuration
+#### Magento 2 logrotate configuration
 
 Configuring logrotate for Magento 2 by setting up a `/etc/logrotate.d/magento2` logrotate config file with following contents
 
@@ -4193,6 +4166,128 @@ php $WEBROOT/bin/magento cache:flush full_page
 Flushed cache types:
 full_page
 ```
+## Magento 2 Backups
+
+Official documentation outlines the process
+
+* http://devdocs.magento.com/guides/v2.2/install-gde/install/cli/install-cli-backup.html
+* http://devdocs.magento.com/guides/v2.2/install-gde/trouble/tshoot_segfault.html
+
+Magento 2 backup code, media and database
+
+```
+vhostname=magento.domain.com
+WEBROOT="/home/nginx/domains/${vhostname}/public"
+cd $WEBROOT
+php $WEBROOT/bin/magento setup:backup --code --media --db
+php $WEBROOT/bin/magento info:backups:list
+```
+
+example backup
+
+```
+vhostname=magento.domain.com
+WEBROOT="/home/nginx/domains/${vhostname}/public"
+cd $WEBROOT
+time php $WEBROOT/bin/magento setup:backup --code --media --db
+Enabling maintenance mode
+Code backup is starting...
+Code backup filename: 1521200521_filesystem_code.tgz (The archive can be uncompressed with 7-Zip on Windows systems)
+Code backup path: /home/nginx/domains/magento.domain.com/public/var/backups/1521200521_filesystem_code.tgz
+[SUCCESS]: Code backup completed successfully.
+Media backup is starting...
+Media backup filename: 1521200521_filesystem_media.tgz (The archive can be uncompressed with 7-Zip on Windows systems)
+Media backup path: /home/nginx/domains/magento.domain.com/public/var/backups/1521200521_filesystem_media.tgz
+[SUCCESS]: Media backup completed successfully.
+DB backup is starting...
+DB backup filename: 1521200521_db.sql
+DB backup path: /home/nginx/domains/magento.domain.com/public/var/backups/1521200521_db.sql
+[SUCCESS]: DB backup completed successfully.
+Disabling maintenance mode
+
+real    4m38.630s
+user    1m39.453s
+sys     0m50.048s
+```
+
+```
+ls -lah /home/nginx/domains/magento.domain.com/public/var/backups/
+total 55M
+drwxrwx---.  2 nginx nginx  4.0K Mar 16 11:46 .
+drwxr-sr-x. 10 nginx nginx  4.0K Mar 16 11:51 ..
+-rw-r--r--   1 root  root  1005K Mar 16 11:46 1521200521_db.sql
+-rw-r--r--   1 root  root    54M Mar 16 11:46 1521200521_filesystem_code.tgz
+-rw-r--r--   1 root  root    60K Mar 16 11:46 1521200521_filesystem_media.tgz
+```
+
+```
+php $WEBROOT/bin/magento info:backups:list
+Showing backup files in /home/nginx/domains/magento.domain.com/public/var/backups.
++---------------------------------+-------------+
+| Backup Filename                 | Backup Type |
++---------------------------------+-------------+
+| 1521200521_filesystem_code.tgz  | code        |
+| 1521200521_db.sql               | db          |
+| 1521200521_filesystem_media.tgz | media       |
++---------------------------------+-------------+
+```
+
+Restoring Magento 2 from backups
+
+```
+magento setup:rollback -c 1521200521_filesystem_code.tgz -m 1521200521_filesystem_media.tgz -d 1521200521_db.sql
+```
+
+## Magento 2 Install And Remove Sample Data
+
+Official documentation outlines the process
+
+* http://devdocs.magento.com/guides/v2.2/install-gde/install/cli/install-cli-backup.html
+* http://devdocs.magento.com/guides/v2.2/install-gde/install/cli/install-cli-sample-data.html
+* http://devdocs.magento.com/guides/v2.2/install-gde/install/sample-data-before-composer.html
+* http://devdocs.magento.com/guides/v2.2/install-gde/install/cli/install-cli-sample-data-other.html
+* http://devdocs.magento.com/guides/v2.2/install-gde/trouble/tshoot_sample-data.html#trouble-samp-prod
+* https://github.com/magento/magento2-sample-data/tree/2.2
+
+Install sample data after Magento 2 install. Added checks if Varnish & Redis cache are in play as per setup in this guide to restart Varnish Cache and flush Redis caches
+
+```
+vhostname=magento.domain.com
+WEBROOT="/home/nginx/domains/${vhostname}/public"
+cd $WEBROOT
+php $WEBROOT/bin/magento setup:backup --code --media --db
+php $WEBROOT/bin/magento info:backups:list
+php $WEBROOT/bin/magento deploy:mode:show
+php $WEBROOT/bin/magento deploy:mode:set developer
+php $WEBROOT/bin/magento sampledata:deploy
+php $WEBROOT/bin/magento cache:clean
+php $WEBROOT/bin/magento setup:upgrade
+php $WEBROOT/bin/magento deploy:mode:show
+php $WEBROOT/bin/magento deploy:mode:set production
+php $WEBROOT/bin/magento indexer:reindex
+php $WEBROOT/bin/magento setup:static-content:deploy
+php $WEBROOT/bin/magento setup:di:compile
+composer dump-autoload -o
+php $WEBROOT/bin/magento cache:flush
+time find var generated vendor pub/static pub/media app/etc -type f -exec chmod u+w {} \;
+time find var vendor generated pub/static pub/media app/etc -type d -exec chmod u+w {} \;
+chown -R nginx:nginx "/home/nginx/domains/${vhostname}/public"
+service nginx restart
+if [ -f "$(which varnishadm)" ]; then service varnish restart; fi
+if [ -f "$(which redis-cli)" ]; then redis-cli -n 12 FLUSHALL; redis-cli -n 13 FLUSHALL; redis-cli -n 14 FLUSHALL; fi
+```
+
+Remove sample data
+
+```
+vhostname=magento.domain.com
+WEBROOT="/home/nginx/domains/${vhostname}/public"
+cd $WEBROOT
+php $WEBROOT/bin/magento setup:backup --code --media --db
+php $WEBROOT/bin/magento info:backups:list
+php $WEBROOT/bin/magento sampledata:remove
+php $WEBROOT/bin/magento cache:flush
+```
 
 ## Magento Docs & Info Links
 
@@ -4242,6 +4337,9 @@ full_page
 
 ### magento sample data sets
 
+* http://devdocs.magento.com/guides/v2.2/install-gde/install/cli/install-cli-sample-data.html
+* http://devdocs.magento.com/guides/v2.2/install-gde/install/sample-data-before-composer.html
+* http://devdocs.magento.com/guides/v2.2/install-gde/install/cli/install-cli-sample-data-other.html
 * https://github.com/IvanChepurnyi/load-test-magento2-bootstrap ([setup.sh](https://github.com/IvanChepurnyi/load-test-magento2-bootstrap/blob/master/setup.sh))
 * https://github.com/IvanChepurnyi/load-test-magento1-bootstrap
 
