@@ -2383,7 +2383,7 @@ thread 1 made 342 requests and got 340 responses
 thread 2 made 345 requests and got 344 responses
 ```
 
-Magento 2 Redis caching still has to go through Nginx and PHP-FPM to be processed so there is still PHP-FPM load to deal with it seems. So looks like [Varnish Caching for Magento 2 full page caching](http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish.html) would be a better option. Varnsih Cache added HTTP/2 support in 5.0 but isn't enabled out of box and Varnish HTTP/2 support is still work in progress with Varnish Cache 5.1, 5.2+ [details](https://varnish-cache.org/docs/5.2/whats-new/changes-5.1.html#progress-on-http-2-support).
+Magento 2 Redis caching still has to go through Nginx and PHP-FPM to be processed so there is still PHP-FPM load to deal with it seems. So looks like [Varnish Caching for Magento 2 full page caching](http://devdocs.magento.com/guides/v2.2/config-guide/varnish/config-varnish.html) would be a better option. Varnish Cache added HTTP/2 support in 5.0 but isn't enabled out of box and Varnish HTTP/2 support is still work in progress with Varnish Cache 5.1, 5.2+ [details](https://varnish-cache.org/docs/5.2/whats-new/changes-5.1.html#progress-on-http-2-support).
 
 During wrk-cmm load testing run top stats.
 
@@ -2771,7 +2771,7 @@ backend default {
     .port = "8686";
 ```
 
-### Step 2. Magento side adjustments
+### Step 2. Magento site adjustments
 
 ```
 vhostname=magento.domain.com
@@ -4501,6 +4501,7 @@ php $WEBROOT/bin/magento maintenance:status
 
 ### Magento 2 Extensions
 
+* http://devdocs.magento.com/guides/v2.2/comp-mgr/install-extensions.html
 * https://www.weltpixel.com/magento-2-lazy-loading-enhanced.html
 * https://marketplace.magento.com/innovo-module-cache-improve.html
 * https://amasty.com/magento-full-page-cache.html
