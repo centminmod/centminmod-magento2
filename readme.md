@@ -670,7 +670,7 @@ echo "/usr/local/src/centminmod/addons/mysqladmin_shell.sh createuserdb $DBNAME 
 Now using php run the `$WEBROOT/bin/magento` binary to install and setup Magento 2.2.2
 ```
 # magento installation
-time php $WEBROOT/bin/magento setup:install --base-url=https:/${vhostname}/ \
+time php $WEBROOT/bin/magento setup:install --base-url=https://${vhostname}/ \
 --db-host=localhost --db-prefix=$DBPREFIX --db-name=$DBNAME --db-user=$DBUSER --db-password=$DBPASS \
 --admin-firstname=$ADMINFNAME --admin-lastname=$ADMINLNAME --admin-email=$ADMINEMAIL \
 --admin-user=$ADMINUSER --admin-password=$ADMINPASS --language=en_US \
